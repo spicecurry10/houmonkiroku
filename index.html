@@ -1,0 +1,1048 @@
+<!DOCTYPE html>
+<html lang="ja">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>訪問記録｜利用者一覧・日別・月別</title>
+  <style>
+
+    :root{
+      --bg:#eef5f0;
+      --bg2:#f8fbf7;
+      --card:rgba(255,255,255,.94);
+      --text:#16211b;
+      --muted:#66756d;
+      --line:#d9e8de;
+      --green:#2f7d46;
+      --green-dark:#1f5d34;
+      --green-deep:#164628;
+      --mint:#e9f7ee;
+      --soft-green:#edf8f1;
+      --blue:#2563eb;
+      --blue-dark:#1d4ed8;
+      --soft-blue:#eef6ff;
+      --danger:#df4b5f;
+      --danger-dark:#c83248;
+      --danger-soft:#fff1f3;
+      --warning:#f59e0b;
+      --shadow:0 14px 32px rgba(28,76,47,.12);
+      --shadow-soft:0 8px 22px rgba(28,76,47,.08);
+      --radius:22px;
+      --radius-sm:16px;
+      --focus:0 0 0 4px rgba(47,125,70,.16);
+    }
+
+    *{box-sizing:border-box}
+    html{min-height:100%;background:var(--bg)}
+    body{
+      margin:0;
+      font-family:-apple-system,BlinkMacSystemFont,"Segoe UI","Hiragino Sans","Yu Gothic",Meiryo,sans-serif;
+      background:
+        radial-gradient(circle at 18% -5%, rgba(124,199,142,.28), transparent 34%),
+        radial-gradient(circle at 96% 18%, rgba(91,153,107,.18), transparent 28%),
+        linear-gradient(180deg,#f7fbf8 0%,#eef5f0 42%,#f6f7f4 100%);
+      color:var(--text);
+      line-height:1.65;
+      letter-spacing:.01em;
+      -webkit-font-smoothing:antialiased;
+    }
+
+    .screen{display:none}
+    .screen.active{display:block}
+
+    header{
+      background:
+        linear-gradient(135deg,var(--green-deep) 0%,var(--green) 54%,#55a66a 100%);
+      color:#fff;
+      padding:18px 16px 20px;
+      position:sticky;
+      top:0;
+      z-index:40;
+      box-shadow:0 10px 26px rgba(22,70,40,.24);
+      overflow:hidden;
+    }
+    header::before{
+      content:"";
+      position:absolute;
+      inset:-70px -30px auto auto;
+      width:220px;
+      height:220px;
+      border-radius:50%;
+      background:rgba(255,255,255,.13);
+      pointer-events:none;
+    }
+    header::after{
+      content:"";
+      position:absolute;
+      left:-70px;
+      bottom:-95px;
+      width:220px;
+      height:220px;
+      border-radius:50%;
+      background:rgba(255,255,255,.08);
+      pointer-events:none;
+    }
+    .header-row,.title-row{
+      position:relative;
+      display:flex;
+      align-items:center;
+      justify-content:space-between;
+      gap:10px;
+      max-width:980px;
+      margin:0 auto;
+    }
+    .title-left{display:flex;align-items:center;gap:8px;min-width:0}
+    h1{
+      font-size:24px;
+      margin:0;
+      font-weight:900;
+      letter-spacing:.04em;
+      white-space:nowrap;
+      overflow:hidden;
+      text-overflow:ellipsis;
+      text-shadow:0 1px 10px rgba(0,0,0,.12);
+    }
+    .sub-title{font-size:13px;opacity:.9;margin-top:3px}
+    .header-tools{display:flex;gap:9px;align-items:center}
+
+    button{
+      appearance:none;
+      border:none;
+      border-radius:15px;
+      padding:10px 15px;
+      font-size:15px;
+      font-weight:900;
+      cursor:pointer;
+      background:linear-gradient(180deg,var(--blue),var(--blue-dark));
+      color:#fff;
+      box-shadow:0 8px 18px rgba(37,99,235,.18);
+      transition:transform .12s ease, filter .12s ease, box-shadow .12s ease, background .12s ease;
+      touch-action:manipulation;
+    }
+    button:hover{filter:brightness(.98);transform:translateY(-1px)}
+    button:active{transform:translateY(0);box-shadow:none}
+    button:focus-visible,input:focus-visible,textarea:focus-visible,select:focus-visible{outline:none;box-shadow:var(--focus)}
+    button.green{background:linear-gradient(180deg,#3d9a55,var(--green));box-shadow:0 8px 18px rgba(47,125,70,.20)}
+    button.secondary{background:#fff;color:#1f2937;border:1px solid #dde7e1;box-shadow:0 8px 18px rgba(28,76,47,.08)}
+    button.danger{background:linear-gradient(180deg,#f05c70,var(--danger));box-shadow:0 8px 18px rgba(223,75,95,.18)}
+    button.outline{background:#fff;color:var(--green);border:2px solid var(--green);box-shadow:0 8px 18px rgba(28,76,47,.08)}
+    .round-btn{
+      width:54px;
+      height:54px;
+      border-radius:50%;
+      font-size:34px;
+      line-height:1;
+      padding:0;
+      background:rgba(255,255,255,.18);
+      border:1px solid rgba(255,255,255,.18);
+      box-shadow:inset 0 1px 0 rgba(255,255,255,.18),0 8px 18px rgba(0,0,0,.08);
+      backdrop-filter:blur(8px);
+    }
+    .small-header-btn{
+      background:rgba(255,255,255,.18);
+      border:1px solid rgba(255,255,255,.16);
+      box-shadow:inset 0 1px 0 rgba(255,255,255,.18),0 8px 18px rgba(0,0,0,.08);
+      color:#fff;
+      padding:8px 12px;
+      backdrop-filter:blur(8px);
+    }
+    .back-btn{
+      background:transparent;
+      color:#fff;
+      box-shadow:none;
+      font-size:40px;
+      line-height:1;
+      padding:0 8px 0 0;
+    }
+    .count-badge{
+      background:rgba(255,255,255,.94);
+      color:var(--green);
+      font-weight:900;
+      border-radius:15px;
+      padding:8px 14px;
+      font-size:20px;
+      min-width:48px;
+      text-align:center;
+      box-shadow:inset 0 0 0 1px rgba(255,255,255,.4),0 6px 16px rgba(0,0,0,.10);
+    }
+
+    main{max-width:980px;margin:0 auto;padding:16px 12px 34px}
+    .search-panel,.date-panel,.month-panel{
+      background:rgba(255,255,255,.72);
+      border-bottom:1px solid rgba(217,232,222,.9);
+      padding:14px 16px;
+      position:sticky;
+      top:92px;
+      z-index:35;
+      box-shadow:0 10px 24px rgba(28,76,47,.08);
+      backdrop-filter:blur(12px);
+    }
+    .search-box{
+      max-width:980px;
+      margin:0 auto;
+      background:rgba(255,255,255,.9);
+      border:1px solid var(--line);
+      border-radius:18px;
+      display:flex;
+      align-items:center;
+      gap:10px;
+      padding:9px 13px;
+      box-shadow:var(--shadow-soft);
+    }
+    .search-icon{font-size:27px;opacity:.9}
+    .search-box input{
+      border:none;
+      background:transparent;
+      outline:none;
+      font-size:20px;
+      width:100%;
+      min-height:42px;
+      color:var(--text);
+    }
+    .search-box input::placeholder{color:#99a49e}
+    .date-row,.month-row{display:grid;grid-template-columns:auto 1fr auto;gap:10px;align-items:center;max-width:980px;margin:0 auto 10px}
+    .month-row{grid-template-columns:1fr auto}
+    .date-row:last-child,.month-row:last-child{margin-bottom:0}
+    .date-label{font-weight:900;color:#47564d;white-space:nowrap}
+    input[type=date],input[type=month]{
+      width:100%;
+      min-height:56px;
+      border:2px solid rgba(47,125,70,.85);
+      border-radius:18px;
+      padding:10px 14px;
+      font-size:22px;
+      text-align:center;
+      color:var(--text);
+      background:#fff;
+      box-shadow:inset 0 1px 0 rgba(255,255,255,.8),0 6px 14px rgba(28,76,47,.08);
+    }
+    input,textarea,select{font-family:inherit}
+    input::placeholder,textarea::placeholder{color:#9aa9a0}
+
+    .toolbar{display:flex;flex-wrap:wrap;gap:9px;margin-bottom:13px}
+    .toolbar button{flex:0 1 auto}
+    .summary-bar{
+      display:flex;
+      flex-wrap:wrap;
+      align-items:center;
+      gap:10px;
+      justify-content:space-between;
+      background:linear-gradient(135deg,#eef7ff,#eefaf2);
+      border:1px solid #cfebd8;
+      color:#185b36;
+      padding:13px 14px;
+      border-radius:18px;
+      margin-bottom:13px;
+      font-weight:900;
+      font-size:17px;
+      box-shadow:var(--shadow-soft);
+    }
+    .status{color:var(--green);font-weight:900;min-height:24px;margin:4px 0 8px;font-size:14px}
+    .empty-state{
+      background:rgba(255,255,255,.9);
+      border:1px dashed #bdd4c3;
+      border-radius:22px;
+      padding:30px 14px;
+      text-align:center;
+      color:#66756d;
+      font-weight:800;
+      box-shadow:var(--shadow-soft);
+    }
+
+    .user-toolbar{display:flex;gap:9px;margin-bottom:13px}
+    .user-toolbar button{flex:1}
+    .user-list{display:flex;flex-direction:column;gap:13px}
+    .user-row{
+      display:grid;
+      grid-template-columns:58px 1fr 48px 48px;
+      gap:10px;
+      align-items:center;
+      background:var(--card);
+      border-radius:22px;
+      padding:12px;
+      box-shadow:var(--shadow);
+      border:1px solid rgba(217,232,222,.88);
+      transition:transform .12s ease, box-shadow .12s ease;
+    }
+    .user-row:hover{transform:translateY(-1px);box-shadow:0 18px 38px rgba(28,76,47,.14)}
+    .user-initial{
+      width:52px;
+      height:52px;
+      border-radius:50%;
+      background:linear-gradient(135deg,var(--green-deep),var(--green));
+      color:#fff;
+      display:flex;
+      align-items:center;
+      justify-content:center;
+      font-weight:900;
+      font-size:26px;
+      flex:0 0 auto;
+      box-shadow:0 8px 16px rgba(47,125,70,.22);
+    }
+    .user-name-input{
+      border:none;
+      background:transparent;
+      font-size:20px;
+      font-weight:850;
+      color:#111827;
+      width:100%;
+      outline:none;
+      min-width:0;
+    }
+    .arrow-btn,.trash-btn{
+      box-shadow:none;
+      background:#fff;
+      color:#66756d;
+      font-size:28px;
+      padding:4px;
+      border-radius:50%;
+      border:1px solid #e3ece6;
+    }
+    .trash-btn{font-size:22px;color:#7b8a81}
+    .arrow-btn:hover,.trash-btn:hover{background:#f5faf7}
+    .user-help,.footer-note{font-size:13px;color:#66756d;margin:12px 2px 0}
+
+    .record-card,.month-card{
+      background:var(--card);
+      border:1px solid rgba(217,232,222,.92);
+      border-radius:24px;
+      margin-bottom:15px;
+      overflow:hidden;
+      box-shadow:var(--shadow);
+    }
+    .record-head{
+      background:linear-gradient(135deg,#effaf2 0%,#f8fcf8 100%);
+      border-bottom:1px solid var(--line);
+      padding:13px;
+      display:grid;
+      grid-template-columns:1fr auto;
+      gap:10px;
+      align-items:end;
+    }
+    .record-title-input{
+      font-size:19px;
+      font-weight:900;
+      border:1px solid #cfe4d4;
+      border-radius:16px;
+      padding:11px 13px;
+      width:100%;
+      background:rgba(255,255,255,.92);
+      box-shadow:inset 0 1px 2px rgba(20,60,34,.04);
+    }
+    .record-actions{display:flex;gap:8px;flex-wrap:wrap;justify-content:flex-end}
+    .record-actions button{padding:9px 12px}
+    .section{padding:13px;border-bottom:1px solid #edf3ee}
+    .grid-4{display:grid;grid-template-columns:repeat(4,1fr);gap:10px}
+    .grid-2{display:grid;grid-template-columns:repeat(2,1fr);gap:10px}
+    .form-row{display:flex;flex-direction:column;gap:6px;min-width:0}
+    .field-label,.row-title{font-size:13px;font-weight:900;color:#34483c}
+    .form-row input[type=text],.form-row input[type=number],.form-row textarea,.mini-memo{
+      width:100%;
+      border:1px solid #cfded4;
+      border-radius:16px;
+      padding:10px 12px;
+      font-size:16px;
+      background:#fff;
+      color:var(--text);
+      box-shadow:inset 0 1px 2px rgba(20,60,34,.04);
+    }
+    .form-row textarea{min-height:82px;resize:vertical}
+    .date-input-small{
+      border:1px solid #cfded4!important;
+      font-size:16px!important;
+      min-height:44px!important;
+      text-align:left!important;
+      border-radius:16px!important;
+      padding:8px 10px!important;
+      box-shadow:none!important;
+    }
+
+    details{border-bottom:1px solid #edf3ee}
+    summary{
+      cursor:pointer;
+      padding:14px 15px;
+      font-size:17px;
+      font-weight:900;
+      color:var(--green-dark);
+      background:linear-gradient(180deg,#ffffff,#f7fbf8);
+      list-style:none;
+      user-select:none;
+    }
+    summary::-webkit-details-marker{display:none}
+    summary::before{content:"▼";display:inline-block;margin-right:8px;transform:rotate(-90deg);transition:.15s;color:#6faa7a}
+    details[open] summary::before{transform:rotate(0)}
+    .details-body{padding:13px;background:#fff}
+    .group{
+      background:linear-gradient(180deg,#fcfefd,#f8fbf8);
+      border:1px solid #e2eee6;
+      border-radius:18px;
+      padding:11px;
+    }
+    .choice-line{display:flex;flex-wrap:wrap;gap:8px}
+    .pill{
+      display:inline-flex;
+      align-items:center;
+      gap:6px;
+      background:#fff;
+      border:1px solid #cfded4;
+      border-radius:999px;
+      padding:8px 11px;
+      font-size:14px;
+      font-weight:850;
+      box-shadow:0 3px 10px rgba(28,76,47,.05);
+    }
+    .pill input{accent-color:var(--green)}
+    .mini-memo{margin-top:7px}
+    .copy-area{position:absolute;left:-9999px;top:-9999px;opacity:0}
+    .toggle-option{display:inline-flex;align-items:center;gap:6px;font-size:14px;color:var(--muted);user-select:none;padding:8px 2px}
+
+    .month-list-title{font-size:20px;font-weight:900;color:#56675c;margin:18px 2px 10px}
+    .month-card{padding:17px 17px 15px}
+    .month-date{font-size:24px;font-weight:900;color:var(--green);margin-bottom:12px}
+    .vital-lines{font-size:20px;line-height:1.78;letter-spacing:.02em}
+    .condition-line{border-top:1px solid #edf3ee;margin-top:12px;padding-top:12px;font-size:19px;line-height:1.75}
+    .condition-line .label{font-weight:900;color:#3a4f42}
+    .month-actions{border-top:1px solid #edf3ee;margin-top:12px;padding-top:12px;display:grid;grid-template-columns:1fr 1fr 1fr;gap:9px}
+    .month-actions button{font-size:16px;min-height:48px}
+    .month-editor{margin-top:12px;border-top:1px dashed #cbded0;padding-top:12px}
+    .hidden{display:none!important}
+
+    .modal-backdrop{
+      position:fixed;
+      inset:0;
+      background:rgba(14,30,21,.52);
+      z-index:100;
+      display:flex;
+      align-items:center;
+      justify-content:center;
+      padding:18px;
+      backdrop-filter:blur(5px);
+    }
+    .modal-card{
+      width:min(760px,100%);
+      max-height:88vh;
+      overflow:auto;
+      background:rgba(255,255,255,.97);
+      border-radius:28px;
+      padding:22px 18px;
+      box-shadow:0 22px 60px rgba(10,30,18,.30);
+      border:1px solid rgba(255,255,255,.7);
+    }
+    .modal-title{text-align:center;font-size:25px;font-weight:900;margin:4px 0 22px;color:#111827;letter-spacing:.04em}
+    .modal-section-label{display:flex;align-items:center;gap:8px;color:#66756d;font-weight:900;font-size:15px;margin:14px 0 10px}
+    .backup-menu{display:flex;flex-direction:column;gap:11px}
+    .backup-menu button{
+      width:100%;
+      min-height:68px;
+      background:#fff;
+      color:#111827;
+      border:2px solid #e4ece7;
+      box-shadow:0 8px 16px rgba(28,76,47,.06);
+      border-radius:18px;
+      text-align:left;
+      font-size:20px;
+      padding:16px 18px;
+    }
+    .backup-menu button:hover{background:#f8fbf8}
+    .modal-divider{height:1px;background:#e4ece7;margin:16px 0}
+    .modal-close{width:100%;min-height:56px;background:#fff!important;color:#66756d!important;border:2px solid #e4ece7!important;box-shadow:none!important;margin-top:14px;font-size:20px}
+    .dict-editor{margin-top:12px;background:#f8fbf8;border:1px solid #e4ece7;border-radius:18px;padding:12px}
+    .dict-editor textarea{width:100%;min-height:260px;border:1px solid #cfded4;border-radius:16px;padding:12px;font-size:16px;resize:vertical;background:#fff}
+    .dict-actions{display:grid;grid-template-columns:1fr 1fr;gap:10px;margin-top:10px}
+    .file-input-hidden{display:none}
+
+
+    .confirm-card{
+      width:min(520px,100%);
+      max-height:none;
+      text-align:center;
+    }
+    .confirm-icon{
+      width:64px;
+      height:64px;
+      border-radius:50%;
+      margin:0 auto 12px;
+      display:flex;
+      align-items:center;
+      justify-content:center;
+      background:var(--danger-soft);
+      color:var(--danger);
+      font-size:34px;
+      border:1px solid #ffd0d7;
+    }
+    .confirm-text{
+      color:#34483c;
+      font-size:16px;
+      line-height:1.75;
+      margin:0 0 18px;
+      text-align:left;
+      background:#f8fbf8;
+      border:1px solid #e4ece7;
+      border-radius:18px;
+      padding:14px;
+    }
+    .confirm-actions{
+      display:grid;
+      grid-template-columns:1fr 1fr;
+      gap:10px;
+    }
+    .confirm-actions button{
+      min-height:54px;
+      font-size:18px;
+    }
+
+    @media(max-width:700px){
+      header{padding:42px 16px 22px}
+      h1{font-size:24px}
+      .sub-title{display:none}
+      .search-panel,.date-panel,.month-panel{top:108px}
+      .date-row{grid-template-columns:auto 1fr auto}
+      .month-row{grid-template-columns:1fr auto}
+      .grid-4{grid-template-columns:repeat(2,1fr)}
+      .grid-2{grid-template-columns:1fr}
+      .record-head{grid-template-columns:1fr}
+      .record-actions{justify-content:flex-start}
+      .toolbar button{flex:1 1 auto}
+      .user-row{grid-template-columns:52px 1fr 42px 42px;padding:11px}
+      .user-initial{width:46px;height:46px;font-size:23px}
+      .user-name-input{font-size:18px}
+      .month-actions{grid-template-columns:1fr 1fr}
+      .month-actions .copyBtn{grid-column:1 / 3}
+      button{padding:10px 12px}
+      input[type=date],input[type=month]{font-size:20px;min-height:52px}
+      .backup-menu button{font-size:18px}
+    }
+
+  </style>
+</head>
+<body>
+  <section id="userListScreen" class="screen active">
+    <header>
+      <div class="header-row">
+        <h1>訪問記録</h1>
+        <div class="header-tools">
+          <button type="button" id="openBackupBtn" class="small-header-btn">⚙️</button>
+          <button type="button" id="openDailyBtn" class="small-header-btn">日別</button>
+          <span id="userCountBadge" class="count-badge">0</span>
+          <button type="button" id="addUserHeaderBtn" class="round-btn">＋</button>
+        </div>
+      </div>
+    </header>
+    <div class="search-panel">
+      <div class="search-box"><span class="search-icon">🔍</span><input type="search" id="userSearch" placeholder="利用者を検索"></div>
+    </div>
+    <main>
+      <div class="user-toolbar">
+        <button type="button" id="addUserBtn" class="green">＋ 利用者を追加</button>
+        <button type="button" id="goDailyBtn">日別実施一覧</button>
+      </div>
+      <div id="userList" class="user-list"></div>
+      <p class="user-help">氏名・住所・生年月日・電話番号は入力せず、利用者ID・訪問順・イニシャル等で管理してください。行の「＞」で、その利用者の月別記録を開きます。</p>
+    </main>
+  </section>
+
+  <section id="dailyScreen" class="screen">
+    <header>
+      <div class="title-row">
+        <div class="title-left"><button type="button" id="backUserBtn" class="back-btn">‹</button><div><h1>日別実施一覧</h1><div class="sub-title">日付を選び、その日の実施者を編集します。</div></div></div>
+        <button type="button" id="openBackupBtnDaily" class="small-header-btn">⚙️</button>
+      </div>
+    </header>
+    <div class="date-panel">
+      <div class="date-row"><div class="date-label">日付：</div><input type="date" id="selectedDate"><button type="button" id="todayBtn" class="green">今日</button></div>
+    </div>
+    <main>
+      <div class="summary-bar"><span id="dailySummary">訪問：0件</span><span id="savedLabel">自動保存</span></div>
+      <div class="toolbar">
+        <button type="button" id="addRecordBtn" class="green">＋ 利用者を追加</button>
+        <button type="button" id="copySummaryBtn">日別一覧一括コピー</button>
+        <button type="button" id="copyAllBtn" class="green">全員分を一括コピー</button>
+        <button type="button" id="exportTxtBtn" class="secondary">txt保存</button>
+        <button type="button" id="clearAllBtn" class="danger">全入力リセット</button>
+        <label class="toggle-option"><input type="checkbox" id="omitEmpty" checked> 空欄はコピーしない</label>
+      </div>
+      <div id="status" class="status"></div>
+      <div id="records"></div>
+      <p class="footer-note">日別実施一覧ではバイタルを中心に編集できます。詳細は必要時だけ開いて入力してください。</p>
+    </main>
+  </section>
+
+  <section id="monthlyScreen" class="screen">
+    <header>
+      <div class="title-row">
+        <div class="title-left"><button type="button" id="backUserFromMonthlyBtn" class="back-btn">‹</button><div><h1 id="monthlyUserTitle">利用者記録</h1><div class="sub-title">月別の記録一覧・報告書用出力</div></div></div>
+        <div class="header-tools"><button type="button" id="openBackupBtnMonthly" class="small-header-btn">⚙️</button><button type="button" id="addMonthlyRecordHeaderBtn" class="round-btn">＋</button></div>
+      </div>
+    </header>
+    <div class="month-panel">
+      <div class="month-row"><input type="month" id="selectedMonth"><button type="button" id="monthlyReportBtn" class="green">📄 報告書用出力</button></div>
+      <div class="toolbar" style="margin:0"><button type="button" id="addMonthlyRecordBtn" class="green">＋ 記録追加</button><button type="button" id="deleteMonthlyPeriodBtn" class="danger">🗑 期間削除</button><button type="button" id="monthlyBackDailyBtn" class="secondary">日別へ</button></div>
+    </div>
+    <main>
+      <div id="monthlyStatus" class="status"></div>
+      <div id="monthlySummary" class="month-list-title">記録：0件</div>
+      <div id="monthlyRecords"></div>
+    </main>
+  </section>
+
+
+
+  <div id="backupModal" class="modal-backdrop hidden" role="dialog" aria-modal="true" aria-labelledby="backupTitle">
+    <div class="modal-card">
+      <div id="backupTitle" class="modal-title">バックアップ</div>
+
+      <div class="modal-section-label">📖 マイ辞書</div>
+      <div class="backup-menu">
+        <button type="button" id="editDictBtn">✏️　マイ辞書を編集</button>
+        <button type="button" id="saveDictBtn">📤　辞書をファイル保存</button>
+        <button type="button" id="restoreDictBtn">📥　辞書をファイルから復元</button>
+      </div>
+
+      <div id="dictEditor" class="dict-editor hidden">
+        <textarea id="dictText" placeholder="よく使う文例を1行ずつ入力\n例：体調は良好です。\n例：屋内歩行は杖使用にて見守り。"></textarea>
+        <div class="dict-actions">
+          <button type="button" id="saveDictTextBtn" class="green">保存</button>
+          <button type="button" id="closeDictEditorBtn" class="secondary">閉じる</button>
+        </div>
+      </div>
+
+      <div class="modal-divider"></div>
+      <div class="modal-section-label">💾 全データ</div>
+      <div class="backup-menu">
+        <button type="button" id="saveAllDataBtn">📦　全データをファイル保存</button>
+        <button type="button" id="restoreAllDataBtn">🗂　全データをファイルから復元</button>
+        <button type="button" id="importOldJsonBtn">🔁　旧JSONを取り込み</button>
+      </div>
+      <button type="button" id="closeBackupBtn" class="modal-close">閉じる</button>
+    </div>
+  </div>
+  <input type="file" id="dictRestoreInput" class="file-input-hidden" accept="application/json,.json,.txt">
+  <input type="file" id="allDataRestoreInput" class="file-input-hidden" accept="application/json,.json">
+  <input type="file" id="oldJsonImportInput" class="file-input-hidden" accept="application/json,.json">
+
+
+  <div id="deleteUserConfirmModal" class="modal-backdrop hidden" role="dialog" aria-modal="true" aria-labelledby="deleteUserConfirmTitle">
+    <div class="modal-card confirm-card">
+      <div class="confirm-icon">🗑</div>
+      <div id="deleteUserConfirmTitle" class="modal-title">利用者を削除しますか？</div>
+      <p id="deleteUserConfirmText" class="confirm-text">この利用者を一覧から削除します。入力済みの記録は削除されません。</p>
+      <div class="confirm-actions">
+        <button type="button" id="cancelDeleteUserBtn" class="secondary">キャンセル</button>
+        <button type="button" id="confirmDeleteUserBtn" class="danger">削除する</button>
+      </div>
+    </div>
+  </div>
+
+
+  <textarea id="copyBuffer" class="copy-area" aria-hidden="true"></textarea>
+
+<script>
+const STORAGE_KEY="houmon_kiroku_form_v2_monthly";
+const OLD_STORAGE_KEYS=["houmon_kiroku_form_v1"];
+const SELECTED_DATE_KEY="houmon_kiroku_selected_date";
+const SELECTED_MONTH_KEY="houmon_kiroku_selected_month";
+const USER_STORAGE_KEY="houmon_user_list_v2";
+const OLD_USER_STORAGE_KEYS=["houmon_user_list_v1"];
+const DICT_STORAGE_KEY="houmon_my_dictionary_v1";
+
+const careLevels=["自立","見守り","一部介助","全介助"];
+const moveMethods=["独歩","杖","歩行器","歩行車","車椅子"];
+const householdLevels=["実施あり","一部実施","困難","未実施"];
+let records=[]; let users=[]; let currentUserId=""; let pendingDeleteUserId="";
+
+const $=id=>document.getElementById(id);
+const screens={user:$("userListScreen"),daily:$("dailyScreen"),monthly:$("monthlyScreen")};
+const recordsEl=$("records"), monthlyRecordsEl=$("monthlyRecords"), userListEl=$("userList");
+const statusEl=$("status"), monthlyStatusEl=$("monthlyStatus");
+const selectedDateEl=$("selectedDate"), selectedMonthEl=$("selectedMonth"), omitEmptyEl=$("omitEmpty");
+
+function uid(){return "r"+Date.now().toString(36)+Math.random().toString(36).slice(2,8)}
+function today(){const d=new Date();return `${d.getFullYear()}-${String(d.getMonth()+1).padStart(2,"0")}-${String(d.getDate()).padStart(2,"0")}`}
+function monthToday(){return today().slice(0,7)}
+function formatDateJP(dateStr){if(!dateStr)return"";const [y,m,d]=dateStr.split("-");return `${Number(m)}月${Number(d)}日`}
+function formatDateSlash(dateStr){if(!dateStr)return"";const [y,m,d]=dateStr.split("-");return `${Number(m)}/${Number(d)}`}
+function escapeHTML(v){return String(v??"").replaceAll("&","&amp;").replaceAll("<","&lt;").replaceAll(">","&gt;").replaceAll('"',"&quot;")}
+function safeArr(v){return Array.isArray(v)?v:(v?[String(v)]:[])}
+function userInitial(name){const s=String(name||"未").trim();return s?s.slice(0,1):"未"}
+function getSelectedDate(){return selectedDateEl.value||today()}
+function getSelectedMonth(){return selectedMonthEl.value||monthToday()}
+function showStatus(msg,target=statusEl){target.textContent=msg;setTimeout(()=>{if(target.textContent===msg)target.textContent=""},2400)}
+function markSaved(){const el=$("savedLabel"); if(!el)return; el.textContent="保存済み"; setTimeout(()=>el.textContent="自動保存",1500)}
+function showScreen(name){Object.values(screens).forEach(s=>s.classList.remove("active")); screens[name].classList.add("active"); window.scrollTo({top:0,behavior:"smooth"})}
+
+function defaultRecord(date=getSelectedDate(), user=null){return {__id:uid(),meta_date:date,meta_user_ref:user?.id||"",meta_user_id:user?.name||""}}
+function makeUser(name=""){return {id:uid(),name}}
+
+function loadAll(){
+  let raw=localStorage.getItem(STORAGE_KEY);
+  if(!raw){for(const k of OLD_STORAGE_KEYS){raw=localStorage.getItem(k); if(raw)break}}
+  try{records=raw?JSON.parse(raw):[]}catch(e){records=[]}
+  if(!Array.isArray(records))records=[];
+  records=records.map(r=>({...r,__id:r.__id||uid(),meta_date:r.meta_date||today(),meta_user_id:r.meta_user_id||"",meta_user_ref:r.meta_user_ref||""}));
+  const d=localStorage.getItem(SELECTED_DATE_KEY)||today(); selectedDateEl.value=d;
+  selectedMonthEl.value=localStorage.getItem(SELECTED_MONTH_KEY)||d.slice(0,7)||monthToday();
+}
+function saveAll(show=true){localStorage.setItem(STORAGE_KEY,JSON.stringify(records));localStorage.setItem(SELECTED_DATE_KEY,getSelectedDate());localStorage.setItem(SELECTED_MONTH_KEY,getSelectedMonth());if(show)markSaved()}
+function loadUsers(){
+  let raw=localStorage.getItem(USER_STORAGE_KEY);
+  if(!raw){for(const k of OLD_USER_STORAGE_KEYS){raw=localStorage.getItem(k); if(raw)break}}
+  try{users=raw?JSON.parse(raw):[]}catch(e){users=[]}
+  if(!Array.isArray(users))users=[];
+  users=users.map(u=>({id:u.id||uid(),name:u.name||""}));
+  if(!users.length){
+    const names=[...new Set(records.map(r=>String(r.meta_user_id||"").trim()).filter(Boolean))];
+    users=names.map(name=>makeUser(name));
+    records.forEach(r=>{const u=users.find(x=>x.name===r.meta_user_id); if(u)r.meta_user_ref=u.id});
+  }
+  saveUsers(false);
+}
+function saveUsers(render=true){localStorage.setItem(USER_STORAGE_KEY,JSON.stringify(users)); if(render)renderUsers()}
+
+function inputBlock(label,key,type="text",placeholder=""){
+  const tag=type==="textarea"?`<textarea data-k="${key}" placeholder="${placeholder}"></textarea>`:`<input type="${type}" data-k="${key}" placeholder="${placeholder}">`;
+  return `<div class="form-row"><label class="field-label">${label}</label>${tag}</div>`;
+}
+function radioGroup(title,key,options,memoKey=null,recordId=""){
+  const radios=options.map(opt=>`<label class="pill"><input type="radio" data-k="${key}" name="${recordId}_${key}" value="${opt}"> ${opt}</label>`).join("");
+  const memo=memoKey?`<input class="mini-memo" type="text" data-k="${memoKey}" placeholder="メモ">`:"";
+  return `<div class="form-row group"><div class="row-title">${title}</div><div class="choice-line">${radios}</div>${memo}</div>`;
+}
+function checkGroup(title,key,options,memoKey=null){
+  const checks=options.map(opt=>`<label class="pill"><input type="checkbox" data-k="${key}" value="${opt}"> ${opt}</label>`).join("");
+  const memo=memoKey?`<input class="mini-memo" type="text" data-k="${memoKey}" placeholder="メモ">`:"";
+  return `<div class="form-row group"><div class="row-title">${title}</div><div class="choice-line">${checks}</div>${memo}</div>`;
+}
+function interventionRow(title,key){
+  return `<div class="form-row group"><div class="row-title">${title}</div><div class="choice-line"><label class="pill"><input type="checkbox" data-k="${key}_done" value="実施"> 実施</label></div><textarea data-k="${key}_memo" placeholder="内容・負荷量・反応など"></textarea></div>`;
+}
+
+function editorHTML(data, includeDate=false){
+  const id=data.__id;
+  return `
+    <div class="section ${includeDate?"":"hidden"}"><div class="grid-2">${inputBlock("実施日","meta_date","date","")}</div></div>
+    <div class="section"><div class="grid-4">
+      ${inputBlock("SBP","vital_sbp","number","例：128")}${inputBlock("DBP","vital_dbp","number","例：72")}${inputBlock("SpO2","vital_spo2","number","例：97")}${inputBlock("PR","vital_pr","number","例：76")}
+    </div></div>
+    <details><summary>全体の様子</summary><div class="details-body grid-2">
+      ${inputBlock("表情","overall_face","text","例：穏やか／眠そう")}${inputBlock("疲労感","overall_fatigue","text","例：軽度あり")}${inputBlock("疼痛の訴え","overall_pain_complaint","text","例：腰部痛あり")}${inputBlock("会話・発言","overall_speech","textarea","例：「今日は少し腰が重い」")}
+    </div></details>
+    <details><summary>身体機能</summary><div class="details-body grid-2">
+      ${inputBlock("心肺機能","func_cardio","text")}${inputBlock("皮膚状態","func_skin","text")}${inputBlock("炎症所見","func_inflammation","text")}${inputBlock("疼痛：部位／程度／誘発動作","func_pain_detail","text")}${inputBlock("知覚","func_sensory","text")}${inputBlock("関節可動域","func_rom","text")}${inputBlock("筋力：MMT","func_mmt","text")}${inputBlock("筋緊張","func_tone","text")}${inputBlock("協調性","func_coordination","text")}${inputBlock("バランス","func_balance","text")}${inputBlock("足部・爪ケア","func_foot_nail","text")}
+    </div></details>
+    <details><summary>基本動作</summary><div class="details-body grid-2">
+      ${radioGroup("起居","basic_bed_level",careLevels,"basic_bed_memo",id)}${radioGroup("起立","basic_stand_level",careLevels,"basic_stand_memo",id)}${radioGroup("移乗","basic_transfer_level",careLevels,"basic_transfer_memo",id)}${checkGroup("屋内移動","basic_indoor_methods",moveMethods,"basic_indoor_memo")}${checkGroup("屋外移動","basic_outdoor_methods",moveMethods,"basic_outdoor_memo")}${inputBlock("跛行","basic_limp","text","例：右立脚期短縮あり")}
+    </div></details>
+    <details><summary>日常生活動作 ADL</summary><div class="details-body grid-2">
+      ${radioGroup("食事","adl_meal_level",careLevels,"adl_meal_memo",id)}${radioGroup("服薬","adl_medication_level",careLevels,"adl_medication_memo",id)}${radioGroup("整容","adl_grooming_level",careLevels,"adl_grooming_memo",id)}${radioGroup("トイレ","adl_toilet_level",careLevels,"adl_toilet_memo",id)}${radioGroup("排便・排尿コントロール","adl_excretion_level",careLevels,"adl_excretion_memo",id)}${radioGroup("入浴","adl_bathing_level",careLevels,"adl_bathing_memo",id)}${radioGroup("更衣","adl_dressing_level",careLevels,"adl_dressing_memo",id)}${radioGroup("階段昇降","adl_stairs_level",careLevels,"adl_stairs_memo",id)}${radioGroup("家事動作","adl_housework_level",householdLevels,"adl_housework_memo",id)}
+    </div></details>
+    <details><summary>介入内容</summary><div class="details-body grid-2">
+      ${interventionRow("ROM訓練","int_rom")}${interventionRow("筋力訓練","int_strength")}${interventionRow("バランス練習","int_balance")}${interventionRow("歩行練習","int_gait")}${interventionRow("基本動作練習","int_basic")}${interventionRow("ADL練習","int_adl")}${interventionRow("自主訓練指導","int_self")}${interventionRow("環境調整","int_environment")}${interventionRow("家族指導","int_family")}
+    </div></details>
+    <details><summary>特記事項</summary><div class="details-body grid-2">
+      ${inputBlock("転倒","special_fall","text")}${inputBlock("受診・服薬変更","special_medical_change","text")}${inputBlock("家族・ケアマネ連絡","special_contact","text")}${inputBlock("リスク・注意点","special_risk","text")}${inputBlock("次回方針","special_next_plan","text")}${inputBlock("その他","special_other","textarea")}
+    </div></details>`;
+}
+
+function createDailyCard(data,index){
+  const card=document.createElement("section"); card.className="record-card"; card.dataset.recordId=data.__id;
+  card.innerHTML=`<div class="record-head"><div><label class="field-label">利用者ID・訪問順</label><input class="record-title-input" type="text" data-k="meta_user_id" placeholder="例：1件目 / ID001"></div><div class="record-actions"><button type="button" class="copyOneBtn green">コピー</button><button type="button" class="openMonthlyBtn secondary">月別</button><button type="button" class="duplicateBtn secondary">複製</button><button type="button" class="deleteBtn danger">削除</button></div></div>${editorHTML(data,false)}`;
+  recordsEl.appendChild(card); populateCard(card,data); wireCard(card); return card;
+}
+function createMonthCard(data,index){
+  const card=document.createElement("section"); card.className="month-card"; card.dataset.recordId=data.__id;
+  card.innerHTML=`
+    <div class="month-date">${escapeHTML(formatDateSlash(data.meta_date))}</div>
+    <div class="vital-lines">SBP：${escapeHTML(data.vital_sbp||"")}<br>DBP：${escapeHTML(data.vital_dbp||"")}<br>SpO2：${escapeHTML(data.vital_spo2||"")}<br>PR：${escapeHTML(data.vital_pr||"")}</div>
+    <div class="condition-line"><span class="label">様子：</span>${escapeHTML(conditionSummary(data))}</div>
+    <div class="month-actions"><button type="button" class="copyOneBtn outline copyBtn">コピー</button><button type="button" class="toggleEditBtn">編集</button><button type="button" class="deleteBtn danger">削除</button></div>
+    <div class="month-editor hidden"><div class="record-card" style="box-shadow:none;margin:0;border-radius:14px;">${editorHTML(data,true)}</div></div>`;
+  monthlyRecordsEl.appendChild(card); populateCard(card,data); wireCard(card); return card;
+}
+function conditionSummary(d){
+  const parts=[];
+  [d.overall_face,d.overall_fatigue,d.overall_pain_complaint,d.overall_speech,d.special_other].forEach(v=>{if(String(v||"").trim())parts.push(String(v).trim())});
+  const interventions=[]; [[d.int_rom_done,"ROM"],[d.int_strength_done,"筋力"],[d.int_balance_done,"バランス"],[d.int_gait_done,"歩行"],[d.int_basic_done,"基本動作"],[d.int_adl_done,"ADL"],[d.int_self_done,"自主訓練"],[d.int_environment_done,"環境調整"],[d.int_family_done,"家族指導"]].forEach(([v,label])=>{if(v)interventions.push(label)});
+  if(interventions.length)parts.push(`実施：${interventions.join("、")}`);
+  return parts.join("。") || "";
+}
+function getRecordById(id){return records.find(r=>r.__id===id)}
+function collectCardData(card){
+  const id=card.dataset.recordId; const d=getRecordById(id); if(!d)return null;
+  const groups={};
+  card.querySelectorAll("[data-k]").forEach(el=>{
+    const k=el.dataset.k;
+    if(el.type==="checkbox"){
+      if(!groups[k])groups[k]=[];
+      if(el.checked)groups[k].push(el.value||"実施");
+    }else if(el.type==="radio"){
+      if(el.checked)d[k]=el.value;
+    }else{d[k]=el.value;}
+  });
+  Object.keys(groups).forEach(k=>{d[k]=groups[k].length===1 && groups[k][0]==="実施" ? "実施" : groups[k]});
+  if(!d.meta_date)d.meta_date=getSelectedDate();
+  return d;
+}
+function populateCard(card,d){
+  card.querySelectorAll("[data-k]").forEach(el=>{
+    const k=el.dataset.k; const v=d[k];
+    if(el.type==="checkbox"){
+      if(Array.isArray(v))el.checked=v.includes(el.value); else el.checked=!!v && (el.value==="実施" || String(v)===el.value);
+    }else if(el.type==="radio")el.checked=String(v||"")===el.value;
+    else el.value=v||"";
+  });
+}
+function wireCard(card){
+  card.addEventListener("input",()=>{collectCardData(card);saveAll(false);refreshMonthSummaryOnly(card);});
+  card.addEventListener("change",()=>{collectCardData(card);saveAll(false);refreshMonthSummaryOnly(card);});
+  const copy=card.querySelector(".copyOneBtn"); if(copy)copy.addEventListener("click",()=>{const d=collectCardData(card)||getRecordById(card.dataset.recordId);copyText(buildRecordText(d,true), monthlyScreen.classList.contains("active")?monthlyStatusEl:statusEl)});
+  const del=card.querySelector(".deleteBtn"); if(del)del.addEventListener("click",()=>deleteRecord(card.dataset.recordId));
+  const dup=card.querySelector(".duplicateBtn"); if(dup)dup.addEventListener("click",()=>duplicateRecord(card.dataset.recordId));
+  const mon=card.querySelector(".openMonthlyBtn"); if(mon)mon.addEventListener("click",()=>{const d=getRecordById(card.dataset.recordId); if(d){openMonthlyForRecord(d)}});
+  const toggle=card.querySelector(".toggleEditBtn"); if(toggle)toggle.addEventListener("click",()=>{const editor=card.querySelector(".month-editor"); editor.classList.toggle("hidden"); toggle.textContent=editor.classList.contains("hidden")?"編集":"閉じる";});
+}
+function refreshMonthSummaryOnly(card){
+  if(!card.classList.contains("month-card"))return; const d=getRecordById(card.dataset.recordId); if(!d)return;
+  const vital=card.querySelector(".vital-lines"); if(vital)vital.innerHTML=`SBP：${escapeHTML(d.vital_sbp||"")}<br>DBP：${escapeHTML(d.vital_dbp||"")}<br>SpO2：${escapeHTML(d.vital_spo2||"")}<br>PR：${escapeHTML(d.vital_pr||"")}`;
+  const cond=card.querySelector(".condition-line"); if(cond)cond.innerHTML=`<span class="label">様子：</span>${escapeHTML(conditionSummary(d))}`;
+  const date=card.querySelector(".month-date"); if(date)date.textContent=formatDateSlash(d.meta_date);
+}
+function deleteRecord(id){
+  if(!confirm("この記録を削除しますか？"))return; records=records.filter(r=>r.__id!==id); saveAll(false); renderDaily(); renderMonthly(); showStatus("削除しました", monthlyScreen.classList.contains("active")?monthlyStatusEl:statusEl);
+}
+function duplicateRecord(id){const src=getRecordById(id); if(!src)return; const copy={...src,__id:uid()}; records.push(copy); saveAll(); renderDaily(); showStatus("複製しました")}
+
+function renderDaily(){
+  const date=getSelectedDate(); const list=records.filter(r=>(r.meta_date||date)===date);
+  recordsEl.innerHTML=""; $("dailySummary").textContent=`${formatDateJP(date)}　訪問：${list.length}件`;
+  if(!list.length){recordsEl.innerHTML=`<div class="empty-state">この日付の記録はありません。<br>「＋ 利用者を追加」から入力してください。</div>`;return}
+  list.forEach(createDailyCard);
+}
+function renderUsers(){
+  const keyword=String($("userSearch").value||"").trim().toLowerCase(); const list=users.filter(u=>String(u.name||"").toLowerCase().includes(keyword));
+  $("userCountBadge").textContent=users.length; userListEl.innerHTML="";
+  if(!list.length){userListEl.innerHTML=`<div class="empty-state">利用者がありません。<br>「＋ 利用者を追加」から登録してください。</div>`;return}
+  list.forEach(user=>{
+    const row=document.createElement("div"); row.className="user-row";
+    row.innerHTML=`<div class="user-initial" data-user-initial-id="${user.id}">${escapeHTML(userInitial(user.name))}</div><input class="user-name-input" type="text" data-user-name-id="${user.id}" value="${escapeHTML(user.name)}" placeholder="利用者ID・訪問順"><button type="button" class="arrow-btn" aria-label="月別記録を開く">›</button><button type="button" class="trash-btn" aria-label="削除">🗑</button>`;
+    row.querySelector(".user-name-input").addEventListener("input",e=>updateUserName(user.id,e.target.value));
+    row.querySelector(".arrow-btn").addEventListener("click",()=>openMonthlyForUser(user.id));
+    row.querySelector(".trash-btn").addEventListener("click",()=>deleteUser(user.id));
+    userListEl.appendChild(row);
+  });
+}
+function renderMonthly(){
+  const user=users.find(u=>u.id===currentUserId); if(!user){return}
+  $("monthlyUserTitle").textContent=String(user.name||"未設定") || "利用者記録";
+  const month=getSelectedMonth();
+  const list=records.filter(r=>r.meta_user_ref===currentUserId && String(r.meta_date||"").slice(0,7)===month).sort((a,b)=>String(b.meta_date).localeCompare(String(a.meta_date)));
+  $("monthlySummary").textContent=`${month.replace("-","年")}月　記録：${list.length}件`;
+  monthlyRecordsEl.innerHTML="";
+  if(!list.length){monthlyRecordsEl.innerHTML=`<div class="empty-state">この月の記録はありません。<br>「＋ 記録追加」から追加できます。</div>`;return}
+  list.forEach(createMonthCard);
+}
+
+function addUser(name=""){
+  const user=makeUser(name||`利用者${users.length+1}`); users.push(user); saveUsers(); setTimeout(()=>{const input=document.querySelector(`[data-user-name-id="${user.id}"]`); if(input){input.focus();input.select()}},0)
+}
+function deleteUser(userId){
+  const user=users.find(u=>u.id===userId);
+  pendingDeleteUserId=userId;
+  const name=String(user?.name||"この利用者").trim()||"この利用者";
+  $("deleteUserConfirmText").innerHTML=`<strong>${escapeHTML(name)}</strong> を利用者一覧から削除します。<br>入力済みの記録は削除されません。`;
+  $("deleteUserConfirmModal").classList.remove("hidden");
+}
+function closeDeleteUserConfirm(){pendingDeleteUserId=""; $("deleteUserConfirmModal").classList.add("hidden")}
+function confirmDeleteUser(){
+  if(!pendingDeleteUserId)return closeDeleteUserConfirm();
+  users=users.filter(u=>u.id!==pendingDeleteUserId);
+  closeDeleteUserConfirm();
+  saveUsers();
+  showStatus("利用者一覧から削除しました");
+}
+function updateUserName(userId,name){const user=users.find(u=>u.id===userId); if(!user)return; user.name=name; records.forEach(r=>{if(r.meta_user_ref===userId)r.meta_user_id=name}); localStorage.setItem(USER_STORAGE_KEY,JSON.stringify(users)); saveAll(false); $("userCountBadge").textContent=users.length; const circle=document.querySelector(`[data-user-initial-id="${userId}"]`); if(circle)circle.textContent=userInitial(name)}
+function addRecordForUserOnDate(userId,date){const user=users.find(u=>u.id===userId); const rec=defaultRecord(date,user); records.push(rec); saveAll(); return rec}
+function openMonthlyForUser(userId){currentUserId=userId; if(!selectedMonthEl.value)selectedMonthEl.value=getSelectedDate().slice(0,7); showScreen("monthly"); renderMonthly()}
+function openMonthlyForRecord(d){if(!d.meta_user_ref){let name=String(d.meta_user_id||"").trim(); let user=users.find(u=>u.name===name); if(!user){user=makeUser(name||"未設定"); users.push(user); saveUsers(false)} d.meta_user_ref=user.id; currentUserId=user.id; saveAll(false)}else currentUserId=d.meta_user_ref; selectedMonthEl.value=String(d.meta_date||today()).slice(0,7); showScreen("monthly"); renderMonthly()}
+
+function addLine(lines,label,value,omit=true){if(Array.isArray(value))value=value.join("／"); value=String(value||"").trim(); if(!value && omit)return; lines.push(`${label}：${value}`)}
+function hasAny(vals){return vals.some(v=>Array.isArray(v)?v.length:String(v||"").trim())}
+function section(lines,title,items,omit=true){const rows=items.filter(it=>Array.isArray(it.value)?it.value.length:String(it.value||"").trim()||!omit); if(!rows.length&&omit)return; lines.push("",`[${title}]`); rows.forEach(it=>addLine(lines,it.label,it.value,omit))}
+function levelWithMemo(level,memo){level=String(level||"").trim(); memo=String(memo||"").trim(); return [level,memo].filter(Boolean).join("／")}
+function interventionText(done,memo){const d=Array.isArray(done)?done.join("／"):String(done||""); memo=String(memo||"").trim(); return [d,memo].filter(Boolean).join("／")}
+function buildRecordText(d,omit=true){
+  const lines=[]; addLine(lines,"利用者ID・訪問順",d.meta_user_id,false); addLine(lines,"実施日",d.meta_date,false);
+  section(lines,"バイタル",[{label:"SBP",value:d.vital_sbp},{label:"DBP",value:d.vital_dbp},{label:"SpO2",value:d.vital_spo2},{label:"PR",value:d.vital_pr}],omit);
+  section(lines,"全体の様子",[{label:"表情",value:d.overall_face},{label:"疲労感",value:d.overall_fatigue},{label:"疼痛の訴え",value:d.overall_pain_complaint},{label:"会話・発言",value:d.overall_speech}],omit);
+  section(lines,"身体機能",[{label:"心肺機能",value:d.func_cardio},{label:"皮膚状態",value:d.func_skin},{label:"炎症所見",value:d.func_inflammation},{label:"疼痛",value:d.func_pain_detail},{label:"知覚",value:d.func_sensory},{label:"関節可動域",value:d.func_rom},{label:"筋力：MMT",value:d.func_mmt},{label:"筋緊張",value:d.func_tone},{label:"協調性",value:d.func_coordination},{label:"バランス",value:d.func_balance},{label:"足部・爪ケア",value:d.func_foot_nail}],omit);
+  section(lines,"基本動作",[{label:"起居",value:levelWithMemo(d.basic_bed_level,d.basic_bed_memo)},{label:"起立",value:levelWithMemo(d.basic_stand_level,d.basic_stand_memo)},{label:"移乗",value:levelWithMemo(d.basic_transfer_level,d.basic_transfer_memo)},{label:"屋内移動",value:levelWithMemo(safeArr(d.basic_indoor_methods).join("／"),d.basic_indoor_memo)},{label:"屋外移動",value:levelWithMemo(safeArr(d.basic_outdoor_methods).join("／"),d.basic_outdoor_memo)},{label:"跛行",value:d.basic_limp}],omit);
+  section(lines,"日常生活動作",[{label:"食事",value:levelWithMemo(d.adl_meal_level,d.adl_meal_memo)},{label:"服薬",value:levelWithMemo(d.adl_medication_level,d.adl_medication_memo)},{label:"整容",value:levelWithMemo(d.adl_grooming_level,d.adl_grooming_memo)},{label:"トイレ",value:levelWithMemo(d.adl_toilet_level,d.adl_toilet_memo)},{label:"排便・排尿コントロール",value:levelWithMemo(d.adl_excretion_level,d.adl_excretion_memo)},{label:"入浴",value:levelWithMemo(d.adl_bathing_level,d.adl_bathing_memo)},{label:"更衣",value:levelWithMemo(d.adl_dressing_level,d.adl_dressing_memo)},{label:"階段昇降",value:levelWithMemo(d.adl_stairs_level,d.adl_stairs_memo)},{label:"家事動作",value:levelWithMemo(d.adl_housework_level,d.adl_housework_memo)}],omit);
+  section(lines,"介入内容",[{label:"ROM訓練",value:interventionText(d.int_rom_done,d.int_rom_memo)},{label:"筋力訓練",value:interventionText(d.int_strength_done,d.int_strength_memo)},{label:"バランス練習",value:interventionText(d.int_balance_done,d.int_balance_memo)},{label:"歩行練習",value:interventionText(d.int_gait_done,d.int_gait_memo)},{label:"基本動作練習",value:interventionText(d.int_basic_done,d.int_basic_memo)},{label:"ADL練習",value:interventionText(d.int_adl_done,d.int_adl_memo)},{label:"自主訓練指導",value:interventionText(d.int_self_done,d.int_self_memo)},{label:"環境調整",value:interventionText(d.int_environment_done,d.int_environment_memo)},{label:"家族指導",value:interventionText(d.int_family_done,d.int_family_memo)}],omit);
+  section(lines,"特記事項",[{label:"転倒",value:d.special_fall},{label:"受診・服薬変更",value:d.special_medical_change},{label:"家族・ケアマネ連絡",value:d.special_contact},{label:"リスク・注意点",value:d.special_risk},{label:"次回方針",value:d.special_next_plan},{label:"その他",value:d.special_other}],omit);
+  return lines.join("\n").replace(/\n{3,}/g,"\n\n").trim();
+}
+function buildDailySummaryText(){const date=getSelectedDate();const list=records.filter(r=>(r.meta_date||date)===date);const lines=[`【日別実施一覧】`,`実施日：${date}`,`訪問：${list.length}件`,""]; list.forEach((r,i)=>{lines.push(`■ ${r.meta_user_id||`${i+1}件目`}`); addLine(lines,"SBP",r.vital_sbp,true); addLine(lines,"DBP",r.vital_dbp,true); addLine(lines,"SpO2",r.vital_spo2,true); addLine(lines,"PR",r.vital_pr,true); if(i<list.length-1)lines.push("")}); return lines.join("\n").trim()}
+function buildAllDailyText(){const date=getSelectedDate();const list=records.filter(r=>(r.meta_date||date)===date);const blocks=list.map(r=>buildRecordText(r,omitEmptyEl.checked)); return [`【訪問記録データ 一括出力】`,`実施日：${date}`,`訪問：${list.length}件`,"",...blocks.map((b,i)=>i?`---\n${b}`:b)].join("\n").trim()}
+function buildMonthlyReportText(){const user=users.find(u=>u.id===currentUserId);const month=getSelectedMonth();const list=records.filter(r=>r.meta_user_ref===currentUserId&&String(r.meta_date||"").slice(0,7)===month).sort((a,b)=>String(a.meta_date).localeCompare(String(b.meta_date)));const lines=[`【月次報告書用データ】`,`対象：${user?.name||"未設定"}`,`対象月：${month}`,`記録件数：${list.length}`,""]; list.forEach((r,i)=>{lines.push(`--- ${formatDateSlash(r.meta_date)} ---`); lines.push(buildRecordText(r,true)); if(i<list.length-1)lines.push("")}); return lines.join("\n").replace(/\n{3,}/g,"\n\n").trim()}
+async function copyText(text,target=statusEl){try{if(navigator.clipboard&&window.isSecureContext)await navigator.clipboard.writeText(text);else{const buf=$("copyBuffer");buf.value=text;buf.focus();buf.select();document.execCommand("copy")}showStatus("コピーしました",target)}catch(e){const buf=$("copyBuffer");buf.value=text;buf.style.position="static";buf.style.opacity=1;buf.style.width="100%";buf.style.height="240px";showStatus("自動コピーできませんでした。下のテキストを手動でコピーしてください。",target)}}
+function exportTxt(){const text=buildAllDailyText(); const blob=new Blob([text],{type:"text/plain;charset=utf-8"}); const url=URL.createObjectURL(blob); const a=document.createElement("a");a.href=url;a.download=`houmon_kiroku_${getSelectedDate().replaceAll("-","")}.txt`;document.body.appendChild(a);a.click();a.remove();URL.revokeObjectURL(url);showStatus("txtを保存しました")}
+function addMonthlyRecord(){const user=users.find(u=>u.id===currentUserId); if(!user)return; const month=getSelectedMonth(); let date=today(); if(date.slice(0,7)!==month)date=`${month}-01`; const rec=addRecordForUserOnDate(user.id,date); renderMonthly(); showStatus("記録を追加しました",monthlyStatusEl); setTimeout(()=>{const card=document.querySelector(`[data-record-id="${rec.__id}"]`); if(card){card.scrollIntoView({behavior:"smooth",block:"center"}); const editor=card.querySelector(".month-editor"); const btn=card.querySelector(".toggleEditBtn"); if(editor){editor.classList.remove("hidden"); if(btn)btn.textContent="閉じる"}}},0)}
+function deleteMonthlyPeriod(){const month=getSelectedMonth(); const user=users.find(u=>u.id===currentUserId); if(!user)return; const count=records.filter(r=>r.meta_user_ref===currentUserId&&String(r.meta_date||"").slice(0,7)===month).length; if(!count){showStatus("削除対象がありません",monthlyStatusEl);return} if(!confirm(`${user.name||"この利用者"}の${month}の記録${count}件を削除しますか？`))return; records=records.filter(r=>!(r.meta_user_ref===currentUserId&&String(r.meta_date||"").slice(0,7)===month)); saveAll(false); renderMonthly(); showStatus("期間内の記録を削除しました",monthlyStatusEl)}
+
+
+function getDictionary(){return localStorage.getItem(DICT_STORAGE_KEY)||""}
+function saveDictionary(text){localStorage.setItem(DICT_STORAGE_KEY,String(text||""))}
+function timestamp(){const d=new Date();return `${d.getFullYear()}${String(d.getMonth()+1).padStart(2,"0")}${String(d.getDate()).padStart(2,"0")}_${String(d.getHours()).padStart(2,"0")}${String(d.getMinutes()).padStart(2,"0")}`}
+function downloadJson(filename,data){const blob=new Blob([JSON.stringify(data,null,2)],{type:"application/json;charset=utf-8"});const url=URL.createObjectURL(blob);const a=document.createElement("a");a.href=url;a.download=filename;document.body.appendChild(a);a.click();a.remove();URL.revokeObjectURL(url)}
+function buildAllBackupData(){return {app:"houmon_kiroku",version:3,exportedAt:new Date().toISOString(),records,users,selectedDate:getSelectedDate(),selectedMonth:getSelectedMonth(),dictionary:getDictionary()}}
+function restoreAllBackupData(data){
+  if(!data || typeof data!=="object") throw new Error("バックアップファイルの形式が不正です");
+  const nextRecords=Array.isArray(data.records)?data.records:[];
+  const nextUsers=Array.isArray(data.users)?data.users:[];
+  records=nextRecords.map(r=>({...r,__id:r.__id||uid(),meta_date:r.meta_date||today(),meta_user_id:r.meta_user_id||"",meta_user_ref:r.meta_user_ref||""}));
+  users=nextUsers.map(u=>({id:u.id||uid(),name:u.name||""}));
+  if(typeof data.dictionary==="string") saveDictionary(data.dictionary);
+  if(data.selectedDate) selectedDateEl.value=data.selectedDate;
+  if(data.selectedMonth) selectedMonthEl.value=data.selectedMonth;
+  saveUsers(false); saveAll(false); renderUsers(); renderDaily(); renderMonthly();
+}
+
+function normalizeOldDate(v){
+  const s=String(v||"").trim();
+  if(!s)return today();
+  const m=s.match(/(\d{4})[\/\-.年](\d{1,2})[\/\-.月](\d{1,2})/);
+  if(m)return `${m[1]}-${String(Number(m[2])).padStart(2,"0")}-${String(Number(m[3])).padStart(2,"0")}`;
+  if(/^\d{4}-\d{2}-\d{2}$/.test(s))return s;
+  return today();
+}
+function parseOldVitals(v){
+  const out={};
+  String(v||"").split(/\r?\n/).forEach(line=>{
+    const s=line.trim();
+    let m=s.match(/^(SBP|収縮期血圧)\s*[：:]\s*(.+)$/i); if(m){out.vital_sbp=m[2].trim();return;}
+    m=s.match(/^(DBP|拡張期血圧)\s*[：:]\s*(.+)$/i); if(m){out.vital_dbp=m[2].trim();return;}
+    m=s.match(/^(SpO2|SPO2|SpO₂|酸素飽和度)\s*[：:]\s*(.+)$/i); if(m){out.vital_spo2=m[2].trim();return;}
+    m=s.match(/^(PR|脈拍)\s*[：:]\s*(.+)$/i); if(m){out.vital_pr=m[2].trim();return;}
+  });
+  return out;
+}
+function oldUserNameFromObject(obj){
+  if(!obj || typeof obj!=="object")return "";
+  return String(obj.userName||obj.patientName||obj.patient||obj.name||obj.user||obj.memberName||obj.label||obj.title||"").trim();
+}
+function extractOldEntries(data,ctx={userName:""}){
+  const entries=[];
+  if(Array.isArray(data)){
+    data.forEach(item=>entries.push(...extractOldEntries(item,ctx)));
+    return entries;
+  }
+  if(!data || typeof data!=="object")return entries;
+  const hasOldRecord = ("d" in data) || ("v" in data) || ("m" in data);
+  if(hasOldRecord && (data.d || data.v || data.m)){
+    entries.push({raw:data,userName:oldUserNameFromObject(data)||ctx.userName});
+    return entries;
+  }
+  const nextCtx={...ctx};
+  const name=oldUserNameFromObject(data);
+  if(name)nextCtx.userName=name;
+  Object.keys(data).forEach(k=>{
+    if(k==="id")return;
+    const value=data[k];
+    if(value && (Array.isArray(value) || typeof value==="object"))entries.push(...extractOldEntries(value,nextCtx));
+  });
+  return entries;
+}
+function getOrCreateUserByName(name){
+  const n=String(name||"").trim()||"旧データ";
+  let user=users.find(u=>String(u.name||"").trim()===n);
+  if(!user){user=makeUser(n);users.push(user)}
+  return user;
+}
+function convertOldEntryToRecord(entry,fallbackName){
+  const raw=entry.raw||{};
+  const user=getOrCreateUserByName(entry.userName||fallbackName||"旧データ");
+  const vitals=parseOldVitals(raw.v);
+  return {
+    __id:uid(),
+    old_id:String(raw.id||""),
+    meta_date:normalizeOldDate(raw.d),
+    meta_user_ref:user.id,
+    meta_user_id:user.name,
+    ...vitals,
+    overall_speech:String(raw.m||"").trim(),
+    special_other:String(raw.note||raw.memo||"").trim()
+  };
+}
+function importOldJsonData(data){
+  const entries=extractOldEntries(data);
+  if(!entries.length)throw new Error("旧JSONの記録が見つかりません");
+  let fallbackName="旧データ";
+  if(currentUserId){
+    const u=users.find(x=>x.id===currentUserId);
+    if(u?.name)fallbackName=u.name;
+  }
+  if(!entries.some(e=>e.userName)){
+    const input=prompt("この旧JSONの取り込み先の利用者ID・表示名を入力してください", fallbackName);
+    fallbackName=String(input||fallbackName).trim()||"旧データ";
+  }
+  const converted=entries.map(e=>convertOldEntryToRecord(e,fallbackName));
+  records.push(...converted);
+  const firstDate=converted[0]?.meta_date;
+  if(firstDate){selectedDateEl.value=firstDate;selectedMonthEl.value=firstDate.slice(0,7)}
+  saveUsers(false); saveAll(false); renderUsers(); renderDaily(); renderMonthly();
+  return converted.length;
+}
+function openBackup(){ $("backupModal").classList.remove("hidden"); $("dictEditor").classList.add("hidden") }
+function closeBackup(){ $("backupModal").classList.add("hidden") }
+async function readJsonFile(file){const text=await file.text();return JSON.parse(text)}
+function setupRestoreInput(inputId,handler){
+  const input=$(inputId);
+  input.addEventListener("change",async()=>{
+    const file=input.files&&input.files[0]; if(!file)return;
+    try{await handler(file)}catch(e){alert("復元できませんでした。ファイル形式を確認してください。")}
+    input.value="";
+  });
+}
+
+$("todayBtn").addEventListener("click",()=>{selectedDateEl.value=today();saveAll(false);renderDaily()});
+selectedDateEl.addEventListener("change",()=>{saveAll(false);renderDaily()});
+selectedMonthEl.addEventListener("change",()=>{localStorage.setItem(SELECTED_MONTH_KEY,getSelectedMonth());renderMonthly()});
+$("addRecordBtn").addEventListener("click",()=>{records.push(defaultRecord());saveAll();renderDaily();showStatus("利用者を追加しました")});
+$("copySummaryBtn").addEventListener("click",()=>copyText(buildDailySummaryText()));
+$("copyAllBtn").addEventListener("click",()=>copyText(buildAllDailyText()));
+$("exportTxtBtn").addEventListener("click",exportTxt);
+$("clearAllBtn").addEventListener("click",()=>{if(!confirm("全ての入力内容をリセットしますか？この端末内の保存データも削除されます。"))return; localStorage.removeItem(STORAGE_KEY); records=[]; renderDaily(); showStatus("全入力をリセットしました")});
+omitEmptyEl.addEventListener("change",()=>saveAll(false));
+$("backUserBtn").addEventListener("click",()=>{showScreen("user");renderUsers()});
+$("openDailyBtn").addEventListener("click",()=>{showScreen("daily");renderDaily()});
+$("goDailyBtn").addEventListener("click",()=>{showScreen("daily");renderDaily()});
+$("addUserBtn").addEventListener("click",()=>addUser()); $("addUserHeaderBtn").addEventListener("click",()=>addUser());
+$("userSearch").addEventListener("input",renderUsers);
+$("backUserFromMonthlyBtn").addEventListener("click",()=>{showScreen("user");renderUsers()});
+$("monthlyBackDailyBtn").addEventListener("click",()=>{showScreen("daily");renderDaily()});
+$("addMonthlyRecordBtn").addEventListener("click",addMonthlyRecord); $("addMonthlyRecordHeaderBtn").addEventListener("click",addMonthlyRecord);
+$("monthlyReportBtn").addEventListener("click",()=>copyText(buildMonthlyReportText(),monthlyStatusEl));
+$("deleteMonthlyPeriodBtn").addEventListener("click",deleteMonthlyPeriod);
+
+
+["openBackupBtn","openBackupBtnDaily","openBackupBtnMonthly"].forEach(id=>{const el=$(id); if(el)el.addEventListener("click",openBackup)});
+$("closeBackupBtn").addEventListener("click",closeBackup);
+$("backupModal").addEventListener("click",e=>{if(e.target.id==="backupModal")closeBackup()});
+$("cancelDeleteUserBtn").addEventListener("click",closeDeleteUserConfirm);
+$("confirmDeleteUserBtn").addEventListener("click",confirmDeleteUser);
+$("deleteUserConfirmModal").addEventListener("click",e=>{if(e.target.id==="deleteUserConfirmModal")closeDeleteUserConfirm()});
+$("editDictBtn").addEventListener("click",()=>{const editor=$("dictEditor");$("dictText").value=getDictionary();editor.classList.toggle("hidden")});
+$("saveDictTextBtn").addEventListener("click",()=>{saveDictionary($("dictText").value);showStatus("マイ辞書を保存しました");$("dictEditor").classList.add("hidden")});
+$("closeDictEditorBtn").addEventListener("click",()=>$("dictEditor").classList.add("hidden"));
+$("saveDictBtn").addEventListener("click",()=>downloadJson(`houmon_dictionary_${timestamp()}.json`,{app:"houmon_kiroku_dictionary",version:1,exportedAt:new Date().toISOString(),dictionary:getDictionary()}));
+$("restoreDictBtn").addEventListener("click",()=>$("dictRestoreInput").click());
+$("saveAllDataBtn").addEventListener("click",()=>downloadJson(`houmon_all_backup_${timestamp()}.json`,buildAllBackupData()));
+$("restoreAllDataBtn").addEventListener("click",()=>$("allDataRestoreInput").click());
+$("importOldJsonBtn").addEventListener("click",()=>$("oldJsonImportInput").click());
+setupRestoreInput("dictRestoreInput",async(file)=>{const data=await readJsonFile(file);const text=typeof data.dictionary==="string"?data.dictionary:(typeof data==="string"?data:"");saveDictionary(text);$("dictText").value=text;showStatus("マイ辞書を復元しました")});
+setupRestoreInput("allDataRestoreInput",async(file)=>{const data=await readJsonFile(file);if(!confirm("全データを復元します。現在の端末内データは上書きされます。よろしいですか？"))return;restoreAllBackupData(data);showStatus("全データを復元しました")});
+setupRestoreInput("oldJsonImportInput",async(file)=>{const data=await readJsonFile(file);const count=importOldJsonData(data);showStatus(`旧JSONを${count}件取り込みました`)});
+
+loadAll(); loadUsers(); renderUsers(); showScreen("user");
+</script>
+</body>
+</html>
