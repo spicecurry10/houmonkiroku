@@ -265,6 +265,7 @@
       transition:transform .12s ease, box-shadow .12s ease;
     }
     .user-row:hover{transform:translateY(-1px);box-shadow:0 18px 38px rgba(28,76,47,.14)}
+    .user-row{cursor:pointer;-webkit-tap-highlight-color:rgba(47,125,70,.10)}
     .user-initial{
       width:52px;
       height:52px;
@@ -278,6 +279,18 @@
       font-size:26px;
       flex:0 0 auto;
       box-shadow:0 8px 16px rgba(47,125,70,.22);
+    }
+    .user-name-static{
+      font-size:20px;
+      font-weight:850;
+      color:#111827;
+      width:100%;
+      min-width:0;
+      padding:6px 0;
+      line-height:1.25;
+      overflow:hidden;
+      text-overflow:ellipsis;
+      white-space:nowrap;
     }
     .user-name-input{
       border:none;
@@ -505,7 +518,7 @@
       .toolbar button{flex:1 1 auto}
       .user-row{grid-template-columns:52px 1fr 42px 42px;padding:11px}
       .user-initial{width:46px;height:46px;font-size:23px}
-      .user-name-input{font-size:18px}
+      .user-name-static,.user-name-input{font-size:18px}
       .month-actions{grid-template-columns:1fr 1fr}
       .month-actions .copyBtn{grid-column:1 / 3}
       button{padding:10px 12px}
@@ -537,7 +550,7 @@
         <button type="button" id="goDailyBtn">日別実施一覧</button>
       </div>
       <div id="userList" class="user-list"></div>
-      <p class="user-help">氏名・住所・生年月日・電話番号は入力せず、利用者ID・訪問順・イニシャル等で管理してください。行の「＞」で、その利用者の月別記録を開きます。</p>
+      <p class="user-help">氏名・住所・生年月日・電話番号は入力せず、利用者ID・訪問順・イニシャル等で管理してください。利用者の白い欄全体をタップすると月別記録を開きます。</p>
     </main>
   </section>
 
@@ -563,7 +576,7 @@
       </div>
       <div id="status" class="status"></div>
       <div id="records"></div>
-      <p class="footer-note">日別実施一覧ではバイタルを中心に編集できます。詳細は必要時だけ開いて入力してください。</p>
+      <p class="footer-note">日別実施一覧ではバイタルと詳細項目を入力できます。一括コピーには基本動作・ADL・介入内容・特記事項も反映されます。</p>
     </main>
   </section>
 
@@ -749,14 +762,17 @@ function createDailyCard(data,index){
   recordsEl.appendChild(card); populateCard(card,data); wireCard(card); return card;
 }
 function createMonthCard(data,index){
-  const card=document.createElement("section"); card.className="month-card"; card.dataset.recordId=data.__id;
+  const card=document.createElement("section");
+  card.className="month-card";
+  card.dataset.recordId=data.__id;
   card.innerHTML=`
     <div class="month-date">${escapeHTML(formatDateSlash(data.meta_date))}</div>
-    <div class="vital-lines">SBP：${escapeHTML(data.vital_sbp||"")}<br>DBP：${escapeHTML(data.vital_dbp||"")}<br>SpO2：${escapeHTML(data.vital_spo2||"")}<br>PR：${escapeHTML(data.vital_pr||"")}</div>
-    <div class="condition-line"><span class="label">様子：</span>${escapeHTML(conditionSummary(data))}</div>
-    <div class="month-actions"><button type="button" class="copyOneBtn outline copyBtn">コピー</button><button type="button" class="toggleEditBtn">編集</button><button type="button" class="deleteBtn danger">削除</button></div>
+    <div class="month-actions"><button type="button" class="toggleEditBtn">編集</button><button type="button" class="deleteBtn danger">削除</button></div>
     <div class="month-editor hidden"><div class="record-card" style="box-shadow:none;margin:0;border-radius:14px;">${editorHTML(data,true)}</div></div>`;
-  monthlyRecordsEl.appendChild(card); populateCard(card,data); wireCard(card); return card;
+  monthlyRecordsEl.appendChild(card);
+  populateCard(card,data);
+  wireCard(card);
+  return card;
 }
 function conditionSummary(d){
   const parts=[];
@@ -801,10 +817,11 @@ function wireCard(card){
   const toggle=card.querySelector(".toggleEditBtn"); if(toggle)toggle.addEventListener("click",()=>{const editor=card.querySelector(".month-editor"); editor.classList.toggle("hidden"); toggle.textContent=editor.classList.contains("hidden")?"編集":"閉じる";});
 }
 function refreshMonthSummaryOnly(card){
-  if(!card.classList.contains("month-card"))return; const d=getRecordById(card.dataset.recordId); if(!d)return;
-  const vital=card.querySelector(".vital-lines"); if(vital)vital.innerHTML=`SBP：${escapeHTML(d.vital_sbp||"")}<br>DBP：${escapeHTML(d.vital_dbp||"")}<br>SpO2：${escapeHTML(d.vital_spo2||"")}<br>PR：${escapeHTML(d.vital_pr||"")}`;
-  const cond=card.querySelector(".condition-line"); if(cond)cond.innerHTML=`<span class="label">様子：</span>${escapeHTML(conditionSummary(d))}`;
-  const date=card.querySelector(".month-date"); if(date)date.textContent=formatDateSlash(d.meta_date);
+  if(!card.classList.contains("month-card"))return;
+  const d=getRecordById(card.dataset.recordId);
+  if(!d)return;
+  const date=card.querySelector(".month-date");
+  if(date)date.textContent=formatDateSlash(d.meta_date);
 }
 function deleteRecord(id){
   if(!confirm("この記録を削除しますか？"))return; records=records.filter(r=>r.__id!==id); saveAll(false); renderDaily(); renderMonthly(); showStatus("削除しました", monthlyScreen.classList.contains("active")?monthlyStatusEl:statusEl);
@@ -818,15 +835,35 @@ function renderDaily(){
   list.forEach(createDailyCard);
 }
 function renderUsers(){
-  const keyword=String($("userSearch").value||"").trim().toLowerCase(); const list=users.filter(u=>String(u.name||"").toLowerCase().includes(keyword));
-  $("userCountBadge").textContent=users.length; userListEl.innerHTML="";
-  if(!list.length){userListEl.innerHTML=`<div class="empty-state">利用者がありません。<br>「＋ 利用者を追加」から登録してください。</div>`;return}
+  const keyword=String($("userSearch").value||"").trim().toLowerCase();
+  const list=users.filter(u=>String(u.name||"").toLowerCase().includes(keyword));
+  $("userCountBadge").textContent=users.length;
+  userListEl.innerHTML="";
+  if(!list.length){
+    userListEl.innerHTML=`<div class="empty-state">利用者がありません。<br>「＋ 利用者を追加」から登録してください。</div>`;
+    return;
+  }
   list.forEach(user=>{
-    const row=document.createElement("div"); row.className="user-row";
-    row.innerHTML=`<div class="user-initial" data-user-initial-id="${user.id}">${escapeHTML(userInitial(user.name))}</div><input class="user-name-input" type="text" data-user-name-id="${user.id}" value="${escapeHTML(user.name)}" placeholder="利用者ID・訪問順"><button type="button" class="arrow-btn" aria-label="月別記録を開く">›</button><button type="button" class="trash-btn" aria-label="削除">🗑</button>`;
-    row.querySelector(".user-name-input").addEventListener("input",e=>updateUserName(user.id,e.target.value));
-    row.querySelector(".arrow-btn").addEventListener("click",()=>openMonthlyForUser(user.id));
-    row.querySelector(".trash-btn").addEventListener("click",()=>deleteUser(user.id));
+    const row=document.createElement("div");
+    row.className="user-row";
+    row.setAttribute("role","button");
+    row.setAttribute("tabindex","0");
+    row.setAttribute("aria-label",`${user.name||"未設定"}の月別記録を開く`);
+    row.innerHTML=`<div class="user-initial" data-user-initial-id="${user.id}">${escapeHTML(userInitial(user.name))}</div><div class="user-name-static" data-user-name-id="${user.id}">${escapeHTML(user.name||"未設定")}</div><button type="button" class="arrow-btn" aria-label="月別記録を開く">›</button><button type="button" class="trash-btn" aria-label="削除">🗑</button>`;
+
+    const open=()=>openMonthlyForUser(user.id);
+    row.addEventListener("click",e=>{
+      if(e.target.closest(".trash-btn"))return;
+      open();
+    });
+    row.addEventListener("keydown",e=>{
+      if(e.key==="Enter" || e.key===" "){
+        e.preventDefault();
+        open();
+      }
+    });
+    row.querySelector(".arrow-btn").addEventListener("click",e=>{e.stopPropagation();open();});
+    row.querySelector(".trash-btn").addEventListener("click",e=>{e.stopPropagation();deleteUser(user.id);});
     userListEl.appendChild(row);
   });
 }
@@ -842,7 +879,17 @@ function renderMonthly(){
 }
 
 function addUser(name=""){
-  const user=makeUser(name||`利用者${users.length+1}`); users.push(user); saveUsers(); setTimeout(()=>{const input=document.querySelector(`[data-user-name-id="${user.id}"]`); if(input){input.focus();input.select()}},0)
+  let displayName=String(name||"").trim();
+  if(!displayName){
+    displayName=prompt("利用者ID・訪問順・イニシャル等を入力してください", `利用者${users.length+1}`);
+    if(displayName===null)return;
+    displayName=String(displayName).trim();
+  }
+  if(!displayName)displayName=`利用者${users.length+1}`;
+  const user=makeUser(displayName);
+  users.push(user);
+  saveUsers();
+  showStatus("利用者を追加しました");
 }
 function deleteUser(userId){
   const user=users.find(u=>u.id===userId);
@@ -880,7 +927,7 @@ function buildRecordText(d,omit=true){
   section(lines,"特記事項",[{label:"転倒",value:d.special_fall},{label:"受診・服薬変更",value:d.special_medical_change},{label:"家族・ケアマネ連絡",value:d.special_contact},{label:"リスク・注意点",value:d.special_risk},{label:"次回方針",value:d.special_next_plan},{label:"その他",value:d.special_other}],omit);
   return lines.join("\n").replace(/\n{3,}/g,"\n\n").trim();
 }
-function buildDailySummaryText(){const date=getSelectedDate();const list=records.filter(r=>(r.meta_date||date)===date);const lines=[`【日別実施一覧】`,`実施日：${date}`,`訪問：${list.length}件`,""]; list.forEach((r,i)=>{lines.push(`■ ${r.meta_user_id||`${i+1}件目`}`); addLine(lines,"SBP",r.vital_sbp,true); addLine(lines,"DBP",r.vital_dbp,true); addLine(lines,"SpO2",r.vital_spo2,true); addLine(lines,"PR",r.vital_pr,true); if(i<list.length-1)lines.push("")}); return lines.join("\n").trim()}
+function buildDailySummaryText(){const date=getSelectedDate();const list=records.filter(r=>(r.meta_date||date)===date);const blocks=list.map(r=>buildRecordText(r,true)); return [`【日別実施一覧】`,`実施日：${date}`,`訪問：${list.length}件`,"",...blocks.map((b,i)=>i?`---\n${b}`:b)].join("\n").trim()}
 function buildAllDailyText(){const date=getSelectedDate();const list=records.filter(r=>(r.meta_date||date)===date);const blocks=list.map(r=>buildRecordText(r,omitEmptyEl.checked)); return [`【訪問記録データ 一括出力】`,`実施日：${date}`,`訪問：${list.length}件`,"",...blocks.map((b,i)=>i?`---\n${b}`:b)].join("\n").trim()}
 function buildMonthlyReportText(){const user=users.find(u=>u.id===currentUserId);const month=getSelectedMonth();const list=records.filter(r=>r.meta_user_ref===currentUserId&&String(r.meta_date||"").slice(0,7)===month).sort((a,b)=>String(a.meta_date).localeCompare(String(b.meta_date)));const lines=[`【月次報告書用データ】`,`対象：${user?.name||"未設定"}`,`対象月：${month}`,`記録件数：${list.length}`,""]; list.forEach((r,i)=>{lines.push(`--- ${formatDateSlash(r.meta_date)} ---`); lines.push(buildRecordText(r,true)); if(i<list.length-1)lines.push("")}); return lines.join("\n").replace(/\n{3,}/g,"\n\n").trim()}
 async function copyText(text,target=statusEl){try{if(navigator.clipboard&&window.isSecureContext)await navigator.clipboard.writeText(text);else{const buf=$("copyBuffer");buf.value=text;buf.focus();buf.select();document.execCommand("copy")}showStatus("コピーしました",target)}catch(e){const buf=$("copyBuffer");buf.value=text;buf.style.position="static";buf.style.opacity=1;buf.style.width="100%";buf.style.height="240px";showStatus("自動コピーできませんでした。下のテキストを手動でコピーしてください。",target)}}
