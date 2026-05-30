@@ -517,10 +517,18 @@
     }
 
     @media(max-width:700px){
-      header{padding:42px 16px 22px}
-      h1{font-size:24px}
+      header{padding:20px 14px 12px}
+      h1{font-size:21px}
       .sub-title{display:none}
-      .search-panel,.date-panel,.month-panel{top:108px}
+      .header-row,.title-row{gap:8px}
+      .header-tools{gap:6px}
+      .small-header-btn{padding:6px 9px;border-radius:13px;font-size:14px}
+      .round-btn{width:42px;height:42px;font-size:28px}
+      .count-badge{min-width:42px;padding:6px 10px;border-radius:13px;font-size:18px}
+      .search-panel,.date-panel,.month-panel{top:74px;padding:8px 14px}
+      .search-box{border-radius:15px;padding:5px 10px;gap:8px}
+      .search-icon{font-size:22px}
+      .search-box input{font-size:17px;min-height:32px}
       .date-row{grid-template-columns:auto 1fr auto}
       .month-row{grid-template-columns:1fr auto}
       .grid-4{grid-template-columns:repeat(2,1fr)}
@@ -547,9 +555,7 @@
         <h1>訪問記録</h1>
         <div class="header-tools">
           <button type="button" id="openBackupBtn" class="small-header-btn">⚙️</button>
-          <button type="button" id="openDailyBtn" class="small-header-btn">日別</button>
           <span id="userCountBadge" class="count-badge">0</span>
-          <button type="button" id="addUserHeaderBtn" class="round-btn">＋</button>
         </div>
       </div>
     </header>
@@ -562,7 +568,6 @@
         <button type="button" id="goDailyBtn">日別実施一覧</button>
       </div>
       <div id="userList" class="user-list"></div>
-      <p class="user-help">氏名・住所・生年月日・電話番号は入力せず、利用者ID・訪問順・イニシャル等で管理してください。利用者の白い欄全体をタップすると月別記録を開きます。</p>
     </main>
   </section>
 
@@ -1168,9 +1173,8 @@ $("exportTxtBtn").addEventListener("click",exportTxt);
 $("clearAllBtn").addEventListener("click",()=>{if(!confirm("全ての入力内容をリセットしますか？この端末内の保存データも削除されます。"))return; localStorage.removeItem(STORAGE_KEY); records=[]; renderDaily(); showStatus("全入力をリセットしました")});
 omitEmptyEl.addEventListener("change",()=>saveAll(false));
 $("backUserBtn").addEventListener("click",()=>{showScreen("user");renderUsers()});
-$("openDailyBtn").addEventListener("click",()=>{showScreen("daily");renderDaily()});
 $("goDailyBtn").addEventListener("click",()=>{showScreen("daily");renderDaily()});
-$("addUserBtn").addEventListener("click",openAddUserModal); $("addUserHeaderBtn").addEventListener("click",openAddUserModal);
+$("addUserBtn").addEventListener("click",openAddUserModal);
 $("userSearch").addEventListener("input",renderUsers);
 $("backUserFromMonthlyBtn").addEventListener("click",()=>{showScreen("user");renderUsers()});
 $("monthlyBackDailyBtn").addEventListener("click",()=>{showScreen("daily");renderDaily()});
