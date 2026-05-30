@@ -585,8 +585,6 @@
       <div class="summary-bar"><span id="dailySummary">訪問：0件</span><span id="savedLabel">自動保存</span></div>
       <div class="toolbar">
         <button type="button" id="copyAllBtn" class="green">日別一括コピー</button>
-        <button type="button" id="exportTxtBtn" class="secondary">txt保存</button>
-        <button type="button" id="clearAllBtn" class="danger">全入力リセット</button>
         <label class="toggle-option"><input type="checkbox" id="omitEmpty" checked> 空欄はコピーしない</label>
       </div>
       <div id="status" class="status"></div>
@@ -604,7 +602,7 @@
     </header>
     <div class="month-panel">
       <div class="month-row"><input type="month" id="selectedMonth"><button type="button" id="monthlyReportBtn" class="green">📄 報告書用出力</button></div>
-      <div class="toolbar" style="margin:0"><button type="button" id="addMonthlyRecordBtn" class="green">＋ 記録追加</button><button type="button" id="deleteMonthlyPeriodBtn" class="danger">🗑 期間削除</button><button type="button" id="monthlyBackDailyBtn" class="secondary">日別へ</button></div>
+      <div class="toolbar" style="margin:0"><button type="button" id="addMonthlyRecordBtn" class="green">＋ 記録追加</button><button type="button" id="deleteMonthlyPeriodBtn" class="danger">月別一括削除</button><button type="button" id="monthlyBackDailyBtn" class="secondary">日別へ</button></div>
     </div>
     <main>
       <div id="monthlyStatus" class="status"></div>
@@ -1046,9 +1044,8 @@ async function copyText(text,target=statusEl){
   if(copied){hideManualCopy();showStatus("クリップボードにコピーしました",target)}
   else showManualCopy(value,target);
 }
-function exportTxt(){const text=buildAllDailyText(); const blob=new Blob([text],{type:"text/plain;charset=utf-8"}); const url=URL.createObjectURL(blob); const a=document.createElement("a");a.href=url;a.download=`houmon_kiroku_${getSelectedDate().replaceAll("-","")}.txt`;document.body.appendChild(a);a.click();a.remove();URL.revokeObjectURL(url);showStatus("txtを保存しました")}
 function addMonthlyRecord(){const user=users.find(u=>u.id===currentUserId); if(!user)return; const month=getSelectedMonth(); let date=today(); if(date.slice(0,7)!==month)date=`${month}-01`; const rec=addRecordForUserOnDate(user.id,date); renderMonthly(); showStatus("記録を追加しました",monthlyStatusEl); setTimeout(()=>{const card=document.querySelector(`[data-record-id="${rec.__id}"]`); if(card){card.scrollIntoView({behavior:"smooth",block:"center"}); const editor=card.querySelector(".month-editor"); const btn=card.querySelector(".toggleEditBtn"); if(editor){editor.classList.remove("hidden"); if(btn)btn.textContent="閉じる"}}},0)}
-function deleteMonthlyPeriod(){const month=getSelectedMonth(); const user=users.find(u=>u.id===currentUserId); if(!user)return; const count=records.filter(r=>r.meta_user_ref===currentUserId&&String(r.meta_date||"").slice(0,7)===month).length; if(!count){showStatus("削除対象がありません",monthlyStatusEl);return} if(!confirm(`${user.name||"この利用者"}の${month}の記録${count}件を削除しますか？`))return; records=records.filter(r=>!(r.meta_user_ref===currentUserId&&String(r.meta_date||"").slice(0,7)===month)); saveAll(false); renderMonthly(); showStatus("期間内の記録を削除しました",monthlyStatusEl)}
+function deleteMonthlyPeriod(){const month=getSelectedMonth(); const user=users.find(u=>u.id===currentUserId); if(!user)return; const count=records.filter(r=>r.meta_user_ref===currentUserId&&String(r.meta_date||"").slice(0,7)===month).length; if(!count){showStatus("削除対象がありません",monthlyStatusEl);return} if(!confirm(`${user.name||"この利用者"}の${month}の記録${count}件を一括削除しますか？`))return; records=records.filter(r=>!(r.meta_user_ref===currentUserId&&String(r.meta_date||"").slice(0,7)===month)); saveAll(false); renderMonthly(); showStatus("月別記録を一括削除しました",monthlyStatusEl)}
 
 
 function getDictionary(){return localStorage.getItem(DICT_STORAGE_KEY)||""}
@@ -1169,8 +1166,6 @@ $("todayBtn").addEventListener("click",()=>{selectedDateEl.value=today();saveAll
 selectedDateEl.addEventListener("change",()=>{saveAll(false);renderDaily()});
 selectedMonthEl.addEventListener("change",()=>{localStorage.setItem(SELECTED_MONTH_KEY,getSelectedMonth());renderMonthly()});
 $("copyAllBtn").addEventListener("click",()=>copyText(buildAllDailyText()));
-$("exportTxtBtn").addEventListener("click",exportTxt);
-$("clearAllBtn").addEventListener("click",()=>{if(!confirm("全ての入力内容をリセットしますか？この端末内の保存データも削除されます。"))return; localStorage.removeItem(STORAGE_KEY); records=[]; renderDaily(); showStatus("全入力をリセットしました")});
 omitEmptyEl.addEventListener("change",()=>saveAll(false));
 $("backUserBtn").addEventListener("click",()=>{showScreen("user");renderUsers()});
 $("goDailyBtn").addEventListener("click",()=>{showScreen("daily");renderDaily()});
