@@ -271,7 +271,7 @@
     }
     .user-row{
       display:grid;
-      grid-template-columns:58px 1fr 48px;
+      grid-template-columns:1fr 48px;
       gap:10px;
       align-items:center;
       background:var(--card);
@@ -283,20 +283,6 @@
     }
     .user-row:hover{transform:translateY(-1px);box-shadow:0 18px 38px rgba(28,76,47,.14)}
     .user-row{cursor:pointer;-webkit-tap-highlight-color:rgba(47,125,70,.10)}
-    .user-initial{
-      width:52px;
-      height:52px;
-      border-radius:50%;
-      background:linear-gradient(135deg,var(--green-deep),var(--green));
-      color:#fff;
-      display:flex;
-      align-items:center;
-      justify-content:center;
-      font-weight:900;
-      font-size:26px;
-      flex:0 0 auto;
-      box-shadow:0 8px 16px rgba(47,125,70,.22);
-    }
     .user-name-static{
       font-size:20px;
       font-weight:850;
@@ -553,8 +539,7 @@
       .record-head{grid-template-columns:1fr}
       .record-actions{justify-content:flex-start}
       .toolbar button{flex:1 1 auto}
-      .user-row{grid-template-columns:52px 1fr 42px;padding:11px}
-      .user-initial{width:46px;height:46px;font-size:23px}
+      .user-row{grid-template-columns:1fr 42px;padding:13px 11px}
       .user-name-static,.user-name-input{font-size:18px}
       .month-actions{grid-template-columns:1fr 1fr}
       .month-actions .copyBtn{grid-column:1 / 3}
@@ -952,7 +937,7 @@ function renderUsers(){
     row.setAttribute("role","button");
     row.setAttribute("tabindex","0");
     row.setAttribute("aria-label",`${user.name||"未設定"}の月別記録を開く`);
-    row.innerHTML=`<div class="user-initial" data-user-initial-id="${user.id}">${escapeHTML(userInitial(user.name))}</div><div class="user-name-static" data-user-name-id="${user.id}">${escapeHTML(user.name||"未設定")}</div><button type="button" class="trash-btn" aria-label="削除">🗑</button>`;
+    row.innerHTML=`<div class="user-name-static" data-user-name-id="${user.id}">${escapeHTML(user.name||"未設定")}</div><button type="button" class="trash-btn" aria-label="削除">🗑</button>`;
 
     const open=()=>openMonthlyForUser(user.id);
     row.addEventListener("click",e=>{
