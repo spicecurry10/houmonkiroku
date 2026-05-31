@@ -190,6 +190,23 @@
       box-shadow:var(--shadow-soft);
     }
     .search-icon{font-size:27px;opacity:.9}
+    .clear-search-btn{
+      width:36px;
+      height:36px;
+      min-width:36px;
+      border-radius:50%;
+      padding:0;
+      display:none;
+      align-items:center;
+      justify-content:center;
+      background:#eef5f0;
+      color:#596960;
+      box-shadow:none;
+      border:1px solid #d9e8de;
+      font-size:22px;
+      line-height:1;
+    }
+    .clear-search-btn.visible{display:flex}
     .search-box input{
       border:none;
       background:transparent;
@@ -200,6 +217,31 @@
       color:var(--text);
     }
     .search-box input::placeholder{color:#99a49e}
+    .kana-jump{
+      max-width:980px;
+      margin:9px auto 0;
+      display:grid;
+      grid-template-columns:repeat(12,minmax(0,1fr));
+      gap:6px;
+    }
+    .kana-jump button{
+      min-height:36px;
+      padding:5px 0;
+      border-radius:12px;
+      background:#fff;
+      color:#1f5d34;
+      border:1px solid #d9e8de;
+      box-shadow:0 4px 12px rgba(28,76,47,.07);
+      font-size:14px;
+    }
+    .kana-jump button:disabled{
+      color:#a7b3ad;
+      background:rgba(255,255,255,.52);
+      box-shadow:none;
+      cursor:default;
+      transform:none;
+      filter:none;
+    }
     .date-row,.month-row{display:grid;grid-template-columns:auto 1fr auto;gap:10px;align-items:center;max-width:980px;margin:0 auto 10px}
     .month-row{grid-template-columns:1fr auto}
     .date-row:last-child,.month-row:last-child{margin-bottom:0}
@@ -252,6 +294,21 @@
     .user-toolbar{display:flex;gap:9px;margin-bottom:13px}
     .user-toolbar button{flex:1}
     .user-list{display:flex;flex-direction:column;gap:13px}
+    .user-group-heading{
+      position:sticky;
+      top:190px;
+      z-index:20;
+      align-self:flex-start;
+      min-width:48px;
+      border-radius:999px;
+      padding:3px 13px;
+      background:rgba(22,70,40,.92);
+      color:#fff;
+      font-weight:900;
+      font-size:14px;
+      box-shadow:0 8px 18px rgba(22,70,40,.16);
+      scroll-margin-top:180px;
+    }
     .user-row{
       display:grid;
       grid-template-columns:58px 1fr 48px;
@@ -528,7 +585,11 @@
       .search-panel,.date-panel,.month-panel{top:74px;padding:8px 14px}
       .search-box{border-radius:15px;padding:5px 10px;gap:8px}
       .search-icon{font-size:22px}
+      .clear-search-btn{width:30px;height:30px;min-width:30px;font-size:19px}
       .search-box input{font-size:17px;min-height:32px}
+      .kana-jump{grid-template-columns:repeat(6,minmax(0,1fr));gap:5px;margin-top:7px}
+      .kana-jump button{min-height:31px;border-radius:10px;font-size:13px}
+      .user-group-heading{top:164px;scroll-margin-top:152px}
       .date-row{grid-template-columns:auto 1fr auto}
       .month-row{grid-template-columns:1fr auto}
       .grid-4{grid-template-columns:repeat(2,1fr)}
@@ -560,7 +621,8 @@
       </div>
     </header>
     <div class="search-panel">
-      <div class="search-box"><span class="search-icon">🔍</span><input type="search" id="userSearch" placeholder="利用者を検索"></div>
+      <div class="search-box"><span class="search-icon">🔍</span><input type="search" id="userSearch" placeholder="利用者を検索"><button type="button" id="clearUserSearchBtn" class="clear-search-btn" aria-label="検索を消す">×</button></div>
+      <div id="kanaJump" class="kana-jump" aria-label="五十音ジャンプ"></div>
     </div>
     <main>
       <div class="user-toolbar">
@@ -714,8 +776,51 @@ function showScreen(name){Object.values(screens).forEach(s=>s.classList.remove("
 function defaultRecord(date=getSelectedDate(), user=null){return {__id:uid(),meta_date:date,meta_user_ref:user?.id||"",meta_user_id:user?.name||""}}
 function makeUser(name=""){return {id:uid(),name}}
 const userNameCollator=new Intl.Collator("ja-JP",{numeric:true,sensitivity:"base"});
+const kanaGroups=[
+  {key:"all",label:"全"},
+  {key:"a",label:"あ",chars:"あいうえお"},
+  {key:"ka",label:"か",chars:"かきくけこ"},
+  {key:"sa",label:"さ",chars:"さしすせそ"},
+  {key:"ta",label:"た",chars:"たちつてと"},
+  {key:"na",label:"な",chars:"なにぬねの"},
+  {key:"ha",label:"は",chars:"はひふへほ"},
+  {key:"ma",label:"ま",chars:"まみむめも"},
+  {key:"ya",label:"や",chars:"やゆよ"},
+  {key:"ra",label:"ら",chars:"らりるれろ"},
+  {key:"wa",label:"わ",chars:"わをん"},
+  {key:"other",label:"他"}
+];
 function userSortName(user){return String(user?.name||"").trim()||"未設定"}
 function sortUsers(){users.sort((a,b)=>userNameCollator.compare(userSortName(a),userSortName(b))||String(a.id||"").localeCompare(String(b.id||"")))}
+function normalizeKanaInitial(name){
+  let ch=[...String(name||"").trim()][0]||"";
+  if(!ch)return"";
+  let code=ch.charCodeAt(0);
+  if(code>=0x30a1&&code<=0x30f6)ch=String.fromCharCode(code-0x60);
+  ch=ch.normalize("NFD")[0]||ch;
+  const small={"ぁ":"あ","ぃ":"い","ぅ":"う","ぇ":"え","ぉ":"お","ゃ":"や","ゅ":"ゆ","ょ":"よ","っ":"つ","ゎ":"わ"};
+  return small[ch]||ch;
+}
+function userKanaGroupKey(user){
+  const ch=normalizeKanaInitial(userSortName(user));
+  const group=kanaGroups.find(g=>g.chars&&g.chars.includes(ch));
+  return group?.key||"other";
+}
+function groupedUsers(list){
+  return kanaGroups.filter(g=>g.key!=="all").map(g=>({group:g,users:list.filter(u=>userKanaGroupKey(u)===g.key)})).filter(item=>item.users.length);
+}
+function renderKanaJump(counts={}){
+  const el=$("kanaJump");
+  if(!el)return;
+  el.innerHTML=kanaGroups.map(group=>{
+    const count=group.key==="all" ? counts.all||0 : counts[group.key]||0;
+    return `<button type="button" data-kana-jump="${group.key}" ${count?"": "disabled"}>${group.label}</button>`;
+  }).join("");
+}
+function jumpToUserGroup(groupKey){
+  const target=groupKey==="all" ? userListEl : document.querySelector(`[data-user-group="${groupKey}"]`);
+  if(target)target.scrollIntoView({behavior:"smooth",block:"start"});
+}
 
 function loadAll(){
   let raw=localStorage.getItem(STORAGE_KEY);
@@ -867,14 +972,24 @@ function renderDaily(){
 }
 function renderUsers(){
   const keyword=String($("userSearch").value||"").trim().toLowerCase();
-  const list=users.filter(u=>String(u.name||"").toLowerCase().includes(keyword));
+  const list=[...users].sort((a,b)=>userNameCollator.compare(userSortName(a),userSortName(b))||String(a.id||"").localeCompare(String(b.id||""))).filter(u=>String(u.name||"").toLowerCase().includes(keyword));
+  const counts={all:list.length};
+  list.forEach(user=>{const key=userKanaGroupKey(user); counts[key]=(counts[key]||0)+1});
+  renderKanaJump(counts);
+  $("clearUserSearchBtn").classList.toggle("visible",Boolean(keyword));
   $("userCountBadge").textContent=users.length;
   userListEl.innerHTML="";
   if(!list.length){
     userListEl.innerHTML=`<div class="empty-state">利用者がありません。<br>「＋ 利用者を追加」から登録してください。</div>`;
     return;
   }
-  list.forEach(user=>{
+  groupedUsers(list).forEach(({group,users:groupUsers})=>{
+    const heading=document.createElement("div");
+    heading.className="user-group-heading";
+    heading.dataset.userGroup=group.key;
+    heading.textContent=group.label;
+    userListEl.appendChild(heading);
+    groupUsers.forEach(user=>{
     const row=document.createElement("div");
     row.className="user-row";
     row.setAttribute("role","button");
@@ -895,6 +1010,7 @@ function renderUsers(){
     });
     row.querySelector(".trash-btn").addEventListener("click",e=>{e.stopPropagation();deleteUser(user.id);});
     userListEl.appendChild(row);
+    });
   });
 }
 function renderMonthly(){
@@ -1174,6 +1290,8 @@ $("backUserBtn").addEventListener("click",()=>{showScreen("user");renderUsers()}
 $("goDailyBtn").addEventListener("click",()=>{showScreen("daily");renderDaily()});
 $("addUserBtn").addEventListener("click",openAddUserModal);
 $("userSearch").addEventListener("input",renderUsers);
+$("clearUserSearchBtn").addEventListener("click",()=>{$("userSearch").value="";renderUsers();$("userSearch").focus()});
+$("kanaJump").addEventListener("click",e=>{const btn=e.target.closest("[data-kana-jump]"); if(!btn||btn.disabled)return; jumpToUserGroup(btn.dataset.kanaJump)});
 $("backUserFromMonthlyBtn").addEventListener("click",()=>{showScreen("user");renderUsers()});
 $("monthlyBackDailyBtn").addEventListener("click",()=>{showScreen("daily");renderDaily()});
 $("addMonthlyRecordBtn").addEventListener("click",addMonthlyRecord); $("addMonthlyRecordHeaderBtn").addEventListener("click",addMonthlyRecord);
