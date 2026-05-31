@@ -177,49 +177,9 @@
       box-shadow:0 10px 24px rgba(28,76,47,.08);
       backdrop-filter:blur(12px);
     }
-    .search-box{
-      max-width:980px;
-      margin:0 auto;
-      background:rgba(255,255,255,.9);
-      border:1px solid var(--line);
-      border-radius:18px;
-      display:flex;
-      align-items:center;
-      gap:10px;
-      padding:9px 13px;
-      box-shadow:var(--shadow-soft);
-    }
-    .search-icon{font-size:27px;opacity:.9}
-    .clear-search-btn{
-      width:36px;
-      height:36px;
-      min-width:36px;
-      border-radius:50%;
-      padding:0;
-      display:none;
-      align-items:center;
-      justify-content:center;
-      background:#eef5f0;
-      color:#596960;
-      box-shadow:none;
-      border:1px solid #d9e8de;
-      font-size:22px;
-      line-height:1;
-    }
-    .clear-search-btn.visible{display:flex}
-    .search-box input{
-      border:none;
-      background:transparent;
-      outline:none;
-      font-size:20px;
-      width:100%;
-      min-height:42px;
-      color:var(--text);
-    }
-    .search-box input::placeholder{color:#99a49e}
     .kana-jump{
       max-width:980px;
-      margin:9px auto 0;
+      margin:0 auto;
       display:grid;
       grid-template-columns:repeat(12,minmax(0,1fr));
       gap:6px;
@@ -296,18 +256,18 @@
     .user-list{display:flex;flex-direction:column;gap:13px}
     .user-group-heading{
       position:sticky;
-      top:190px;
+      top:158px;
       z-index:20;
       align-self:flex-start;
-      min-width:48px;
+      min-width:58px;
       border-radius:999px;
-      padding:3px 13px;
+      padding:5px 16px;
       background:rgba(22,70,40,.92);
       color:#fff;
       font-weight:900;
-      font-size:14px;
+      font-size:18px;
       box-shadow:0 8px 18px rgba(22,70,40,.16);
-      scroll-margin-top:180px;
+      scroll-margin-top:148px;
     }
     .user-row{
       display:grid;
@@ -583,13 +543,9 @@
       .round-btn{width:42px;height:42px;font-size:28px}
       .count-badge{min-width:42px;padding:6px 10px;border-radius:13px;font-size:18px}
       .search-panel,.date-panel,.month-panel{top:74px;padding:8px 14px}
-      .search-box{border-radius:15px;padding:5px 10px;gap:8px}
-      .search-icon{font-size:22px}
-      .clear-search-btn{width:30px;height:30px;min-width:30px;font-size:19px}
-      .search-box input{font-size:17px;min-height:32px}
-      .kana-jump{grid-template-columns:repeat(6,minmax(0,1fr));gap:5px;margin-top:7px}
+      .kana-jump{grid-template-columns:repeat(6,minmax(0,1fr));gap:5px}
       .kana-jump button{min-height:31px;border-radius:10px;font-size:13px}
-      .user-group-heading{top:164px;scroll-margin-top:152px}
+      .user-group-heading{top:148px;min-width:56px;padding:4px 15px;font-size:17px;scroll-margin-top:136px}
       .date-row{grid-template-columns:auto 1fr auto}
       .month-row{grid-template-columns:1fr auto}
       .grid-4{grid-template-columns:repeat(2,1fr)}
@@ -621,7 +577,6 @@
       </div>
     </header>
     <div class="search-panel">
-      <div class="search-box"><span class="search-icon">🔍</span><input type="search" id="userSearch" placeholder="利用者を検索"><button type="button" id="clearUserSearchBtn" class="clear-search-btn" aria-label="検索を消す">×</button></div>
       <div id="kanaJump" class="kana-jump" aria-label="五十音ジャンプ"></div>
     </div>
     <main>
@@ -971,12 +926,14 @@ function renderDaily(){
   list.forEach(createDailyCard);
 }
 function renderUsers(){
-  const keyword=String($("userSearch").value||"").trim().toLowerCase();
+  const searchEl=$("userSearch");
+  const keyword=searchEl?String(searchEl.value||"").trim().toLowerCase():"";
   const list=[...users].sort((a,b)=>userNameCollator.compare(userSortName(a),userSortName(b))||String(a.id||"").localeCompare(String(b.id||""))).filter(u=>String(u.name||"").toLowerCase().includes(keyword));
   const counts={all:list.length};
   list.forEach(user=>{const key=userKanaGroupKey(user); counts[key]=(counts[key]||0)+1});
   renderKanaJump(counts);
-  $("clearUserSearchBtn").classList.toggle("visible",Boolean(keyword));
+  const clearSearchBtn=$("clearUserSearchBtn");
+  if(clearSearchBtn)clearSearchBtn.classList.toggle("visible",Boolean(keyword));
   $("userCountBadge").textContent=users.length;
   userListEl.innerHTML="";
   if(!list.length){
@@ -1289,8 +1246,8 @@ omitEmptyEl.addEventListener("change",()=>saveAll(false));
 $("backUserBtn").addEventListener("click",()=>{showScreen("user");renderUsers()});
 $("goDailyBtn").addEventListener("click",()=>{showScreen("daily");renderDaily()});
 $("addUserBtn").addEventListener("click",openAddUserModal);
-$("userSearch").addEventListener("input",renderUsers);
-$("clearUserSearchBtn").addEventListener("click",()=>{$("userSearch").value="";renderUsers();$("userSearch").focus()});
+if($("userSearch"))$("userSearch").addEventListener("input",renderUsers);
+if($("clearUserSearchBtn"))$("clearUserSearchBtn").addEventListener("click",()=>{$("userSearch").value="";renderUsers();$("userSearch").focus()});
 $("kanaJump").addEventListener("click",e=>{const btn=e.target.closest("[data-kana-jump]"); if(!btn||btn.disabled)return; jumpToUserGroup(btn.dataset.kanaJump)});
 $("backUserFromMonthlyBtn").addEventListener("click",()=>{showScreen("user");renderUsers()});
 $("monthlyBackDailyBtn").addEventListener("click",()=>{showScreen("daily");renderDaily()});
