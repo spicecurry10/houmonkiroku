@@ -713,6 +713,9 @@ function showScreen(name){Object.values(screens).forEach(s=>s.classList.remove("
 
 function defaultRecord(date=getSelectedDate(), user=null){return {__id:uid(),meta_date:date,meta_user_ref:user?.id||"",meta_user_id:user?.name||""}}
 function makeUser(name=""){return {id:uid(),name}}
+const userNameCollator=new Intl.Collator("ja-JP",{numeric:true,sensitivity:"base"});
+function userSortName(user){return String(user?.name||"").trim()||"未設定"}
+function sortUsers(){users.sort((a,b)=>userNameCollator.compare(userSortName(a),userSortName(b))||String(a.id||"").localeCompare(String(b.id||"")))}
 
 function loadAll(){
   let raw=localStorage.getItem(STORAGE_KEY);
@@ -737,7 +740,7 @@ function loadUsers(){
   }
   saveUsers(false);
 }
-function saveUsers(render=true){localStorage.setItem(USER_STORAGE_KEY,JSON.stringify(users)); if(render)renderUsers()}
+function saveUsers(render=true){sortUsers(); localStorage.setItem(USER_STORAGE_KEY,JSON.stringify(users)); if(render)renderUsers()}
 
 function inputBlock(label,key,type="text",placeholder=""){
   const tag=type==="textarea"?`<textarea data-k="${key}" placeholder="${placeholder}"></textarea>`:`<input type="${type}" data-k="${key}" placeholder="${placeholder}">`;
@@ -943,7 +946,7 @@ function confirmDeleteUser(){
   saveUsers();
   showStatus("利用者一覧から削除しました");
 }
-function updateUserName(userId,name){const user=users.find(u=>u.id===userId); if(!user)return; user.name=name; records.forEach(r=>{if(r.meta_user_ref===userId)r.meta_user_id=name}); localStorage.setItem(USER_STORAGE_KEY,JSON.stringify(users)); saveAll(false); $("userCountBadge").textContent=users.length; const circle=document.querySelector(`[data-user-initial-id="${userId}"]`); if(circle)circle.textContent=userInitial(name)}
+function updateUserName(userId,name){const user=users.find(u=>u.id===userId); if(!user)return; user.name=name; records.forEach(r=>{if(r.meta_user_ref===userId)r.meta_user_id=name}); saveUsers(false); saveAll(false); renderUsers(); renderMonthly()}
 function addRecordForUserOnDate(userId,date){const user=users.find(u=>u.id===userId); const rec=defaultRecord(date,user); records.push(rec); saveAll(); return rec}
 function openMonthlyForUser(userId){currentUserId=userId; if(!selectedMonthEl.value)selectedMonthEl.value=getSelectedDate().slice(0,7); showScreen("monthly"); renderMonthly()}
 function openMonthlyForRecord(d){if(!d.meta_user_ref){let name=String(d.meta_user_id||"").trim(); let user=users.find(u=>u.name===name); if(!user){user=makeUser(name||"未設定"); users.push(user); saveUsers(false)} d.meta_user_ref=user.id; currentUserId=user.id; saveAll(false)}else currentUserId=d.meta_user_ref; selectedMonthEl.value=String(d.meta_date||today()).slice(0,7); showScreen("monthly"); renderMonthly()}
