@@ -684,6 +684,7 @@ const STORAGE_KEY="houmon_kiroku_form_v2_monthly";
 const OLD_STORAGE_KEYS=["houmon_kiroku_form_v1"];
 const SELECTED_DATE_KEY="houmon_kiroku_selected_date";
 const SELECTED_MONTH_KEY="houmon_kiroku_selected_month";
+const APP_DAY_KEY="houmon_kiroku_last_app_day";
 const USER_STORAGE_KEY="houmon_user_list_v2";
 const OLD_USER_STORAGE_KEYS=["houmon_user_list_v1"];
 const DICT_STORAGE_KEY="houmon_my_dictionary_v1";
@@ -702,6 +703,19 @@ const selectedDateEl=$("selectedDate"), selectedMonthEl=$("selectedMonth"), omit
 function uid(){return "r"+Date.now().toString(36)+Math.random().toString(36).slice(2,8)}
 function today(){const d=new Date();return `${d.getFullYear()}-${String(d.getMonth()+1).padStart(2,"0")}-${String(d.getDate()).padStart(2,"0")}`}
 function monthToday(){return today().slice(0,7)}
+function normalizeDateValue(v){
+  const s=String(v||"").trim();
+  if(!s)return "";
+  const m=s.match(/^(\d{4})[\/\-.年](\d{1,2})[\/\-.月](\d{1,2})/);
+  if(!m)return "";
+  return `${m[1]}-${String(Number(m[2])).padStart(2,"0")}-${String(Number(m[3])).padStart(2,"0")}`;
+}
+function normalizeMonthValue(v){
+  const s=String(v||"").trim();
+  const m=s.match(/^(\d{4})[\/\-.年](\d{1,2})/);
+  if(!m)return "";
+  return `${m[1]}-${String(Number(m[2])).padStart(2,"0")}`;
+}
 function formatDateJP(dateStr){if(!dateStr)return"";const [y,m,d]=dateStr.split("-");return `${Number(m)}月${Number(d)}日`}
 function formatDateSlash(dateStr){if(!dateStr)return"";const [y,m,d]=dateStr.split("-");return `${Number(m)}/${Number(d)}`}
 function escapeHTML(v){return String(v??"").replaceAll("&","&amp;").replaceAll("<","&lt;").replaceAll(">","&gt;").replaceAll('"',"&quot;")}
@@ -709,6 +723,22 @@ function safeArr(v){return Array.isArray(v)?v:(v?[String(v)]:[])}
 function userInitial(name){const s=String(name||"未").trim();return s?s.slice(0,1):"未"}
 function getSelectedDate(){return selectedDateEl.value||today()}
 function getSelectedMonth(){return selectedMonthEl.value||monthToday()}
+function setSelectedDate(date,{syncMonth=false}={}){
+  const next=normalizeDateValue(date)||today();
+  selectedDateEl.value=next;
+  if(syncMonth || !selectedMonthEl.value)selectedMonthEl.value=next.slice(0,7);
+  localStorage.setItem(SELECTED_DATE_KEY,next);
+  localStorage.setItem(APP_DAY_KEY,today());
+  if(syncMonth)localStorage.setItem(SELECTED_MONTH_KEY,getSelectedMonth());
+}
+function syncDailyDateWithCalendarDay(){
+  const current=today();
+  const lastAppDay=localStorage.getItem(APP_DAY_KEY);
+  if(lastAppDay===current)return false;
+  setSelectedDate(current);
+  if(dailyScreen.classList.contains("active"))renderDaily();
+  return true;
+}
 function showStatus(msg,target=statusEl){target.textContent=msg;setTimeout(()=>{if(target.textContent===msg)target.textContent=""},2400)}
 function markSaved(){const el=$("savedLabel"); if(!el)return; el.textContent="保存済み"; setTimeout(()=>el.textContent="自動保存",1500)}
 function showScreen(name){Object.values(screens).forEach(s=>s.classList.remove("active")); screens[name].classList.add("active"); window.scrollTo({top:0,behavior:"smooth"})}
@@ -767,11 +797,17 @@ function loadAll(){
   if(!raw){for(const k of OLD_STORAGE_KEYS){raw=localStorage.getItem(k); if(raw)break}}
   try{records=raw?JSON.parse(raw):[]}catch(e){records=[]}
   if(!Array.isArray(records))records=[];
-  records=records.map(r=>({...r,__id:r.__id||uid(),meta_date:r.meta_date||today(),meta_user_id:r.meta_user_id||"",meta_user_ref:r.meta_user_ref||""}));
-  const d=localStorage.getItem(SELECTED_DATE_KEY)||today(); selectedDateEl.value=d;
-  selectedMonthEl.value=localStorage.getItem(SELECTED_MONTH_KEY)||d.slice(0,7)||monthToday();
+  records=records.map(r=>({...r,__id:r.__id||uid(),meta_date:normalizeDateValue(r.meta_date)||today(),meta_user_id:r.meta_user_id||"",meta_user_ref:r.meta_user_ref||""}));
+  const current=today();
+  const savedDate=normalizeDateValue(localStorage.getItem(SELECTED_DATE_KEY));
+  const lastAppDay=localStorage.getItem(APP_DAY_KEY);
+  const d=lastAppDay===current ? (savedDate||current) : current;
+  selectedDateEl.value=d;
+  selectedMonthEl.value=normalizeMonthValue(localStorage.getItem(SELECTED_MONTH_KEY))||d.slice(0,7)||monthToday();
+  localStorage.setItem(SELECTED_DATE_KEY,d);
+  localStorage.setItem(APP_DAY_KEY,current);
 }
-function saveAll(show=true){localStorage.setItem(STORAGE_KEY,JSON.stringify(records));localStorage.setItem(SELECTED_DATE_KEY,getSelectedDate());localStorage.setItem(SELECTED_MONTH_KEY,getSelectedMonth());if(show)markSaved()}
+function saveAll(show=true){localStorage.setItem(STORAGE_KEY,JSON.stringify(records));localStorage.setItem(SELECTED_DATE_KEY,getSelectedDate());localStorage.setItem(SELECTED_MONTH_KEY,getSelectedMonth());localStorage.setItem(APP_DAY_KEY,today());if(show)markSaved()}
 function loadUsers(){
   let raw=localStorage.getItem(USER_STORAGE_KEY);
   if(!raw){for(const k of OLD_USER_STORAGE_KEYS){raw=localStorage.getItem(k); if(raw)break}}
@@ -883,9 +919,21 @@ function populateCard(card,d){
     else el.value=v||"";
   });
 }
+function refreshCardAfterDateChange(card,beforeDate){
+  if(!card.classList.contains("month-card"))return refreshMonthSummaryOnly(card);
+  const d=getRecordById(card.dataset.recordId);
+  if(!d)return;
+  if(String(beforeDate||"").slice(0,7)!==String(d.meta_date||"").slice(0,7))renderMonthly();
+  else refreshMonthSummaryOnly(card);
+}
 function wireCard(card){
   card.addEventListener("input",()=>{collectCardData(card);saveAll(false);refreshMonthSummaryOnly(card);});
-  card.addEventListener("change",()=>{collectCardData(card);saveAll(false);refreshMonthSummaryOnly(card);});
+  card.addEventListener("change",()=>{
+    const beforeDate=getRecordById(card.dataset.recordId)?.meta_date||"";
+    collectCardData(card);
+    saveAll(false);
+    refreshCardAfterDateChange(card,beforeDate);
+  });
   const copy=card.querySelector(".copyOneBtn"); if(copy)copy.addEventListener("click",()=>{const d=collectCardData(card)||getRecordById(card.dataset.recordId);copyText(buildRecordText(d,true), monthlyScreen.classList.contains("active")?monthlyStatusEl:statusEl)});
   const del=card.querySelector(".deleteBtn"); if(del)del.addEventListener("click",()=>deleteRecord(card.dataset.recordId));
   const dup=card.querySelector(".duplicateBtn"); if(dup)dup.addEventListener("click",()=>duplicateRecord(card.dataset.recordId));
@@ -1118,11 +1166,11 @@ function restoreAllBackupData(data){
   if(!data || typeof data!=="object") throw new Error("バックアップファイルの形式が不正です");
   const nextRecords=Array.isArray(data.records)?data.records:[];
   const nextUsers=Array.isArray(data.users)?data.users:[];
-  records=nextRecords.map(r=>({...r,__id:r.__id||uid(),meta_date:r.meta_date||today(),meta_user_id:r.meta_user_id||"",meta_user_ref:r.meta_user_ref||""}));
+  records=nextRecords.map(r=>({...r,__id:r.__id||uid(),meta_date:normalizeDateValue(r.meta_date)||today(),meta_user_id:r.meta_user_id||"",meta_user_ref:r.meta_user_ref||""}));
   users=nextUsers.map(u=>({id:u.id||uid(),name:u.name||""}));
   if(typeof data.dictionary==="string") saveDictionary(data.dictionary);
-  if(data.selectedDate) selectedDateEl.value=data.selectedDate;
-  if(data.selectedMonth) selectedMonthEl.value=data.selectedMonth;
+  if(data.selectedDate)setSelectedDate(data.selectedDate);
+  if(data.selectedMonth)selectedMonthEl.value=normalizeMonthValue(data.selectedMonth)||getSelectedMonth();
   saveUsers(false); saveAll(false); renderUsers(); renderDaily(); renderMonthly();
 }
 
@@ -1207,7 +1255,7 @@ function importOldJsonData(data){
   const converted=entries.map(e=>convertOldEntryToRecord(e,fallbackName));
   records.push(...converted);
   const firstDate=converted[0]?.meta_date;
-  if(firstDate){selectedDateEl.value=firstDate;selectedMonthEl.value=firstDate.slice(0,7)}
+  if(firstDate)setSelectedDate(firstDate,{syncMonth:true});
   saveUsers(false); saveAll(false); renderUsers(); renderDaily(); renderMonthly();
   return converted.length;
 }
@@ -1223,19 +1271,19 @@ function setupRestoreInput(inputId,handler){
   });
 }
 
-$("todayBtn").addEventListener("click",()=>{selectedDateEl.value=today();saveAll(false);renderDaily()});
-selectedDateEl.addEventListener("change",()=>{saveAll(false);renderDaily()});
+$("todayBtn").addEventListener("click",()=>{setSelectedDate(today(),{syncMonth:true});saveAll(false);renderDaily()});
+selectedDateEl.addEventListener("change",()=>{setSelectedDate(selectedDateEl.value);saveAll(false);renderDaily()});
 selectedMonthEl.addEventListener("change",()=>{localStorage.setItem(SELECTED_MONTH_KEY,getSelectedMonth());renderMonthly()});
 $("copyAllBtn").addEventListener("click",()=>copyText(buildAllDailyText()));
 omitEmptyEl.addEventListener("change",()=>saveAll(false));
 $("backUserBtn").addEventListener("click",()=>{showScreen("user");renderUsers()});
-$("goDailyBtn").addEventListener("click",()=>{showScreen("daily");renderDaily()});
+$("goDailyBtn").addEventListener("click",()=>{syncDailyDateWithCalendarDay();showScreen("daily");renderDaily()});
 $("addUserBtn").addEventListener("click",openAddUserModal);
 if($("userSearch"))$("userSearch").addEventListener("input",renderUsers);
 if($("clearUserSearchBtn"))$("clearUserSearchBtn").addEventListener("click",()=>{$("userSearch").value="";renderUsers();$("userSearch").focus()});
 $("kanaJump").addEventListener("click",e=>{const btn=e.target.closest("[data-kana-jump]"); if(!btn||btn.disabled)return; jumpToUserGroup(btn.dataset.kanaJump)});
 $("backUserFromMonthlyBtn").addEventListener("click",()=>{showScreen("user");renderUsers()});
-$("monthlyBackDailyBtn").addEventListener("click",()=>{showScreen("daily");renderDaily()});
+$("monthlyBackDailyBtn").addEventListener("click",()=>{syncDailyDateWithCalendarDay();showScreen("daily");renderDaily()});
 $("addMonthlyRecordBtn").addEventListener("click",addMonthlyRecord); $("addMonthlyRecordHeaderBtn").addEventListener("click",addMonthlyRecord);
 $("monthlyReportBtn").addEventListener("click",()=>copyText(buildMonthlyReportText(),monthlyStatusEl));
 $("deleteMonthlyPeriodBtn").addEventListener("click",deleteMonthlyPeriod);
@@ -1262,6 +1310,9 @@ $("importOldJsonBtn").addEventListener("click",()=>$("oldJsonImportInput").click
 setupRestoreInput("dictRestoreInput",async(file)=>{const data=await readJsonFile(file);const text=typeof data.dictionary==="string"?data.dictionary:(typeof data==="string"?data:"");saveDictionary(text);$("dictText").value=text;showStatus("マイ辞書を復元しました")});
 setupRestoreInput("allDataRestoreInput",async(file)=>{const data=await readJsonFile(file);if(!confirm("全データを復元します。現在の端末内データは上書きされます。よろしいですか？"))return;restoreAllBackupData(data);showStatus("全データを復元しました")});
 setupRestoreInput("oldJsonImportInput",async(file)=>{const data=await readJsonFile(file);const count=importOldJsonData(data);showStatus(`旧JSONを${count}件取り込みました`)});
+
+document.addEventListener("visibilitychange",()=>{if(!document.hidden)syncDailyDateWithCalendarDay()});
+setInterval(syncDailyDateWithCalendarDay,60000);
 
 loadAll(); loadUsers(); renderUsers(); showScreen("user");
 </script>
